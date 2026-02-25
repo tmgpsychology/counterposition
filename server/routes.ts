@@ -6,11 +6,27 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+  app.get("/sitemap.xml", (_req, res) => {
+    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://counterposition.replit.app</loc>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>`;
+    res.header("Content-Type", "application/xml");
+    res.send(sitemap);
+  });
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+  app.get("/robots.txt", (_req, res) => {
+    const robots = `User-agent: *
+Allow: /
+
+Sitemap: https://counterposition.replit.app/sitemap.xml`;
+    res.header("Content-Type", "text/plain");
+    res.send(robots);
+  });
 
   return httpServer;
 }
