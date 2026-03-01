@@ -64,9 +64,6 @@ export default function Home() {
             className="w-full max-w-4xl grid md:grid-cols-2 gap-12 items-center"
           >
             <div className="space-y-8">
-              <div className="inline-block border-2 border-foreground px-3 py-1 text-sm font-bold uppercase tracking-widest bg-foreground text-background">
-                Project 01
-              </div>
               <h1 className="text-6xl sm:text-7xl font-bold uppercase tracking-tighter leading-none">
                 Counter<br/>Position
               </h1>
@@ -78,7 +75,7 @@ export default function Home() {
                 size="lg" 
                 className="rounded-none border-2 border-foreground h-16 px-8 text-lg uppercase tracking-wider group hover:bg-transparent hover:text-foreground transition-all duration-300"
               >
-                Initiate Protocol
+                Get Started
                 <ArrowRight className="ml-4 h-6 w-6 group-hover:translate-x-2 transition-transform" />
               </Button>
             </div>
