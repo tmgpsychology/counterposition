@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Brain, RefreshCcw, ShieldAlert, Zap } from "lucide-react";
+import { ArrowRight, Brain, RefreshCcw, ShieldAlert, Zap, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
@@ -249,16 +249,12 @@ export default function Home() {
                     animate={{ width: "100%" }}
                     transition={{ delay: 0.5, duration: 1 }}
                     className={`h-4 mt-4 ${
-                      score.grade === 'A' || score.grade === 'S' ? 'bg-green-500' :
-                      score.grade === 'B' ? 'bg-blue-500' :
-                      score.grade === 'C' ? 'bg-yellow-500' :
+                      score.grade.startsWith('A') ? 'bg-green-500' :
+                      score.grade.startsWith('B') ? 'bg-blue-500' :
+                      score.grade.startsWith('C') ? 'bg-yellow-500' :
                       'bg-destructive'
                     }`}
                   />
-                </div>
-                <div className="mt-8 text-center">
-                  <p className="text-4xl font-bold">{score.overallScore}/100</p>
-                  <p className="text-sm uppercase tracking-widest text-muted-foreground mt-1">Raw Score</p>
                 </div>
               </div>
 
@@ -272,21 +268,27 @@ export default function Home() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <MetricCard 
                     title="Structural Depth" 
-                    value={score.metrics.depth} 
+                    grade={score.metrics.depth.grade}
                     icon={<Brain className="h-5 w-5" />}
-                    desc="Complexity of arguments presented."
+                    desc={score.metrics.depth.desc}
                   />
                   <MetricCard 
                     title="Intellectual Friction" 
-                    value={score.metrics.friction} 
+                    grade={score.metrics.friction.grade}
                     icon={<Zap className="h-5 w-5" />}
-                    desc="Evidence of struggling against bias."
+                    desc={score.metrics.friction.desc}
                   />
                   <MetricCard 
                     title="Rhetorical Range" 
-                    value={score.metrics.vocabulary} 
+                    grade={score.metrics.vocabulary.grade}
                     icon={<ShieldAlert className="h-5 w-5" />}
-                    desc="Diversity of conceptual vocabulary."
+                    desc={score.metrics.vocabulary.desc}
+                  />
+                  <MetricCard 
+                    title="Research Quality" 
+                    grade={score.metrics.research.grade}
+                    icon={<BookOpen className="h-5 w-5" />}
+                    desc={score.metrics.research.desc}
                   />
                 </div>
 
@@ -308,7 +310,7 @@ export default function Home() {
   );
 }
 
-function MetricCard({ title, value, icon, desc }: { title: string, value: number, icon: React.ReactNode, desc: string }) {
+function MetricCard({ title, grade, icon, desc }: { title: string, grade: string, icon: React.ReactNode, desc: string }) {
   return (
     <div className="p-4 border-2 border-muted bg-card">
       <div className="flex justify-between items-center mb-2">
@@ -316,15 +318,12 @@ function MetricCard({ title, value, icon, desc }: { title: string, value: number
           {icon}
           {title}
         </span>
-        <span className="font-bold">{value}/100</span>
-      </div>
-      <div className="h-2 w-full bg-muted mt-3 relative overflow-hidden">
-        <motion.div 
-          className="absolute top-0 left-0 h-full bg-foreground"
-          initial={{ width: 0 }}
-          animate={{ width: `${value}%` }}
-          transition={{ duration: 1, delay: 0.2 }}
-        />
+        <span className={`font-bold text-lg ${
+          grade.startsWith('A') ? 'text-green-500' :
+          grade.startsWith('B') ? 'text-blue-500' :
+          grade.startsWith('C') ? 'text-yellow-500' :
+          'text-destructive'
+        }`}>{grade}</span>
       </div>
       <p className="text-xs text-muted-foreground mt-3">{desc}</p>
     </div>
