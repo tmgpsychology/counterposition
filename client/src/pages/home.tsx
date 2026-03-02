@@ -68,7 +68,7 @@ export default function Home() {
                 Counter<br/>Position
               </h1>
               <p className="text-xl text-muted-foreground leading-relaxed">
-                A cognitive stress test. State a deeply held conviction, then systematically tear it down. We grade your intellectual honesty and effort.
+                An assessment of the robustness of your argument. State your position, argue against it, get an effort score. Then, if the effort score is high, and the counterposition does not convince you, the integrity of your original position is increased. Simple, thorough, robust.
               </p>
               <Button 
                 onClick={handleStart} 
