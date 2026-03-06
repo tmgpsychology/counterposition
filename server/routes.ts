@@ -14,6 +14,11 @@ export async function registerRoutes(
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
+  <url>
+    <loc>https://counterposition.replit.app/weigh-it-up</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
 </urlset>`;
     res.header("Content-Type", "application/xml");
     res.send(sitemap);

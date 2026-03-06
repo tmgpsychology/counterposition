@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Brain, RefreshCcw, ShieldAlert, Zap, BookOpen } from "lucide-react";
+import { ArrowRight, Brain, RefreshCcw, ShieldAlert, Zap, BookOpen, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { calculateEffortScore, type ScoreResult } from "@/lib/scoring";
@@ -70,14 +71,28 @@ export default function Home() {
               <p className="text-xl text-muted-foreground leading-relaxed">
                 An assessment of the robustness of your argument. State your position, argue against it, get an effort score. Then, if the effort score is high, and the counterposition does not convince you, the integrity of your original position is increased. Simple, thorough, robust.
               </p>
-              <Button 
-                onClick={handleStart} 
-                size="lg" 
-                className="rounded-none border-2 border-foreground h-16 px-8 text-lg uppercase tracking-wider group hover:bg-transparent hover:text-foreground transition-all duration-300"
-              >
-                Get Started
-                <ArrowRight className="ml-4 h-6 w-6 group-hover:translate-x-2 transition-transform" />
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button 
+                  onClick={handleStart} 
+                  size="lg" 
+                  className="rounded-none border-2 border-foreground h-16 px-8 text-lg uppercase tracking-wider group hover:bg-transparent hover:text-foreground transition-all duration-300"
+                  data-testid="button-get-started"
+                >
+                  Get Started
+                  <ArrowRight className="ml-4 h-6 w-6 group-hover:translate-x-2 transition-transform" />
+                </Button>
+                <Link href="/weigh-it-up">
+                  <Button 
+                    variant="outline"
+                    size="lg" 
+                    className="rounded-none border-2 border-foreground h-16 px-8 text-lg uppercase tracking-wider group hover:bg-foreground hover:text-background transition-all duration-300 w-full"
+                    data-testid="button-weigh-it-up"
+                  >
+                    <Scale className="mr-3 h-5 w-5" />
+                    Weigh It Up
+                  </Button>
+                </Link>
+              </div>
             </div>
             <div className="hidden md:flex justify-end relative">
               <div className="absolute inset-0 bg-foreground/5 translate-x-4 translate-y-4 z-0"></div>
