@@ -119,6 +119,8 @@ export default function ProsCons() {
   const [newCon, setNewCon] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
+  const [selectedBarId, setSelectedBarId] = useState<string | null>(null);
+  const [selectedBarSide, setSelectedBarSide] = useState<"pro" | "con" | null>(null);
 
   const addPro = () => {
     if (!newPro.trim()) return;
@@ -132,8 +134,37 @@ export default function ProsCons() {
     setNewCon("");
   };
 
-  const removePro = (id: string) => setPros(prev => prev.filter(p => p.id !== id));
-  const removeCon = (id: string) => setCons(prev => prev.filter(c => c.id !== id));
+  const removePro = (id: string) => {
+    setPros(prev => prev.filter(p => p.id !== id));
+    if (selectedBarId === id) { setSelectedBarId(null); setSelectedBarSide(null); }
+  };
+  const removeCon = (id: string) => {
+    setCons(prev => prev.filter(c => c.id !== id));
+    if (selectedBarId === id) { setSelectedBarId(null); setSelectedBarSide(null); }
+  };
+
+  const selectBar = (id: string, side: "pro" | "con") => {
+    if (selectedBarId === id) { setSelectedBarId(null); setSelectedBarSide(null); }
+    else { setSelectedBarId(id); setSelectedBarSide(side); }
+  };
+
+  const increaseSelected = () => {
+    if (!selectedBarId || !selectedBarSide) return;
+    if (selectedBarSide === "pro") {
+      setPros(prev => prev.map(p => p.id === selectedBarId ? { ...p, weight: Math.min(20, p.weight + 1) } : p));
+    } else {
+      setCons(prev => prev.map(c => c.id === selectedBarId ? { ...c, weight: Math.min(20, c.weight + 1) } : c));
+    }
+  };
+
+  const decreaseSelected = () => {
+    if (!selectedBarId || !selectedBarSide) return;
+    if (selectedBarSide === "pro") {
+      setPros(prev => prev.map(p => p.id === selectedBarId ? { ...p, weight: Math.max(1, p.weight - 1) } : p));
+    } else {
+      setCons(prev => prev.map(c => c.id === selectedBarId ? { ...c, weight: Math.max(1, c.weight - 1) } : c));
+    }
+  };
 
   const addSuggestion = (suggestion: Suggestion) => {
     if (suggestion.side === "pro") {
@@ -144,21 +175,9 @@ export default function ProsCons() {
     setDismissedSuggestions(prev => new Set(prev).add(suggestion.text));
   };
 
-  const increaseWeight = (id: string, side: "pro" | "con") => {
-    if (side === "pro") {
-      setPros(prev => prev.map(p => p.id === id ? { ...p, weight: Math.min(20, p.weight + 1) } : p));
-    } else {
-      setCons(prev => prev.map(c => c.id === id ? { ...c, weight: Math.min(20, c.weight + 1) } : c));
-    }
-  };
-
-  const decreaseWeight = (id: string, side: "pro" | "con") => {
-    if (side === "pro") {
-      setPros(prev => prev.map(p => p.id === id ? { ...p, weight: Math.max(1, p.weight - 1) } : p));
-    } else {
-      setCons(prev => prev.map(c => c.id === id ? { ...c, weight: Math.max(1, c.weight - 1) } : c));
-    }
-  };
+  const selectedItem = selectedBarId
+    ? (selectedBarSide === "pro" ? pros : cons).find(i => i.id === selectedBarId)
+    : null;
 
   const totalProWeight = pros.reduce((sum, p) => sum + p.weight, 0);
   const totalConWeight = cons.reduce((sum, c) => sum + c.weight, 0);
@@ -306,6 +325,39 @@ export default function ProsCons() {
           )}
         </AnimatePresence>
 
+        {(pros.length > 0 || cons.length > 0) && (
+          <div className="flex items-center justify-center gap-4 py-4 border-2 border-muted bg-muted/20">
+            <button
+              onClick={decreaseSelected}
+              disabled={!selectedItem || selectedItem.weight <= 1}
+              className="w-10 h-10 rounded-none border-2 border-foreground flex items-center justify-center font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground hover:text-background transition-colors"
+              data-testid="button-global-decrease"
+            >
+              <Minus className="h-5 w-5" />
+            </button>
+            <div className="text-center min-w-[120px]">
+              {selectedItem ? (
+                <div>
+                  <p className={`text-xs font-bold uppercase tracking-widest ${selectedBarSide === "pro" ? "text-green-500" : "text-red-500"}`}>
+                    {selectedItem.label}
+                  </p>
+                  <p className="text-2xl font-bold">{selectedItem.weight}</p>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground uppercase tracking-widest">Tap a bar</p>
+              )}
+            </div>
+            <button
+              onClick={increaseSelected}
+              disabled={!selectedItem || selectedItem.weight >= 20}
+              className="w-10 h-10 rounded-none border-2 border-foreground flex items-center justify-center font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground hover:text-background transition-colors"
+              data-testid="button-global-increase"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-2 gap-8">
           <div className="space-y-6">
             <h2 className="text-2xl font-bold uppercase tracking-wider text-green-500 border-b-2 border-green-500 pb-2">Pros</h2>
@@ -326,8 +378,8 @@ export default function ProsCons() {
               items={pros}
               color="green"
               globalMax={globalMaxWeight}
-              onIncrease={(id) => increaseWeight(id, "pro")}
-              onDecrease={(id) => decreaseWeight(id, "pro")}
+              selectedId={selectedBarId}
+              onSelect={(id) => selectBar(id, "pro")}
               onRemove={removePro}
               emptyText="No pros yet"
             />
@@ -352,8 +404,8 @@ export default function ProsCons() {
               items={cons}
               color="red"
               globalMax={globalMaxWeight}
-              onIncrease={(id) => increaseWeight(id, "con")}
-              onDecrease={(id) => decreaseWeight(id, "con")}
+              selectedId={selectedBarId}
+              onSelect={(id) => selectBar(id, "con")}
               onRemove={removeCon}
               emptyText="No cons yet"
             />
@@ -400,16 +452,16 @@ function BarChart({
   items,
   color,
   globalMax,
-  onIncrease,
-  onDecrease,
+  selectedId,
+  onSelect,
   onRemove,
   emptyText,
 }: {
   items: BarItem[];
   color: "green" | "red";
   globalMax: number;
-  onIncrease: (id: string) => void;
-  onDecrease: (id: string) => void;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
   onRemove: (id: string) => void;
   emptyText: string;
 }) {
@@ -424,7 +476,7 @@ function BarChart({
   const barColor = color === "green" ? "bg-green-500" : "bg-red-500";
   const barBorder = color === "green" ? "border-green-500" : "border-red-500";
   const textColor = color === "green" ? "text-green-500" : "text-red-500";
-  const btnBg = color === "green" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600";
+  const selectedRing = color === "green" ? "ring-green-500" : "ring-red-500";
 
   return (
     <div className="border-2 border-muted p-4 overflow-x-auto">
@@ -433,6 +485,7 @@ function BarChart({
           {items.map((item) => {
             const heightPercent = item.weight / globalMax;
             const barHeight = Math.max(16, heightPercent * MAX_BAR_HEIGHT);
+            const isSelected = selectedId === item.id;
             return (
               <motion.div
                 key={item.id}
@@ -443,26 +496,11 @@ function BarChart({
                 style={{ width: 64 }}
                 data-testid={`bar-${color}-${item.id}`}
               >
-                <div className="flex gap-1 mb-2">
-                  <button
-                    onClick={() => onDecrease(item.id)}
-                    className={`w-6 h-6 rounded-full flex items-center justify-center ${btnBg} text-white transition-colors`}
-                    data-testid={`button-decrease-${item.id}`}
-                  >
-                    <Minus className="h-3 w-3" />
-                  </button>
-                  <span className={`text-xs font-bold w-5 text-center ${textColor}`}>{item.weight}</span>
-                  <button
-                    onClick={() => onIncrease(item.id)}
-                    className={`w-6 h-6 rounded-full flex items-center justify-center ${btnBg} text-white transition-colors`}
-                    data-testid={`button-increase-${item.id}`}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </button>
-                </div>
+                <span className={`text-xs font-bold mb-1 ${textColor}`}>{item.weight}</span>
                 <div className="flex flex-col justify-end" style={{ height: MAX_BAR_HEIGHT }}>
                   <motion.div
-                    className={`w-12 ${barColor}/80 border-2 ${barBorder}`}
+                    onClick={() => onSelect(item.id)}
+                    className={`w-12 cursor-pointer ${barColor}/80 border-2 ${barBorder} relative transition-all ${isSelected ? `ring-2 ${selectedRing} ring-offset-2` : "opacity-70 hover:opacity-100"}`}
                     animate={{ height: barHeight }}
                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
                   />
