@@ -287,7 +287,7 @@ export default function ProsCons() {
           <div className="flex-1 min-w-0">
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold uppercase tracking-wider text-teal-500 border-b-2 border-teal-500 pb-2">Pros</h2>
+                <h2 className="text-2xl font-bold uppercase tracking-wider text-purple-700 border-b-2 border-purple-700 pb-2">Pros</h2>
                 <div className="flex gap-2">
                   <Input
                     value={newPro}
@@ -313,7 +313,7 @@ export default function ProsCons() {
               </div>
 
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold uppercase tracking-wider text-amber-500 border-b-2 border-amber-500 pb-2">Cons</h2>
+                <h2 className="text-2xl font-bold uppercase tracking-wider text-orange-400 border-b-2 border-orange-400 pb-2">Cons</h2>
                 <div className="flex gap-2">
                   <Input
                     value={newCon}
@@ -353,7 +353,7 @@ export default function ProsCons() {
               <div className="text-center min-w-[48px]">
                 {selectedItem ? (
                   <div>
-                    <p className={`text-[9px] font-bold uppercase tracking-widest leading-tight ${selectedBarSide === "pro" ? "text-teal-500" : "text-amber-500"}`}>
+                    <p className={`text-[9px] font-bold uppercase tracking-widest leading-tight ${selectedBarSide === "pro" ? "text-purple-700" : "text-orange-400"}`}>
                       {selectedItem.label}
                     </p>
                     <p className="text-xl font-bold">{selectedItem.weight}</p>
@@ -400,8 +400,8 @@ export default function ProsCons() {
                       animate={{ opacity: 1, scale: 1 }}
                       className={`px-4 py-2 border-2 rounded-md text-sm font-medium uppercase tracking-wider transition-all hover:scale-105 ${
                         suggestion.side === "pro"
-                          ? "border-teal-500/50 text-teal-500 hover:bg-teal-500/10"
-                          : "border-amber-500/50 text-amber-500 hover:bg-amber-500/10"
+                          ? "border-purple-700/50 text-purple-700 hover:bg-purple-700/10"
+                          : "border-orange-400/50 text-orange-400 hover:bg-orange-400/10"
                       }`}
                       onClick={() => addSuggestion(suggestion)}
                       data-testid={`button-suggestion-${suggestion.text.slice(0, 20)}`}
@@ -426,23 +426,23 @@ export default function ProsCons() {
             <div className="grid grid-cols-2 gap-8">
               <div className="flex flex-col items-center gap-4">
                 <div
-                  className="rounded-full bg-teal-500/20 border-4 border-teal-500 flex items-center justify-center transition-all duration-500"
+                  className="rounded-full bg-purple-700/20 border-4 border-purple-700 flex items-center justify-center transition-all duration-500"
                   style={{ width: proSummaryRadius * 2 + 20, height: proSummaryRadius * 2 + 20 }}
                   data-testid="circle-summary-pros"
                 >
-                  <span className="text-2xl font-bold text-teal-500">{proPercent}%</span>
+                  <span className="text-2xl font-bold text-purple-700">{proPercent}%</span>
                 </div>
-                <p className="text-sm font-bold uppercase tracking-widest text-teal-500">Pros</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-purple-700">Pros</p>
               </div>
               <div className="flex flex-col items-center gap-4">
                 <div
-                  className="rounded-full bg-amber-500/20 border-4 border-amber-500 flex items-center justify-center transition-all duration-500"
+                  className="rounded-full bg-orange-400/20 border-4 border-orange-400 flex items-center justify-center transition-all duration-500"
                   style={{ width: conSummaryRadius * 2 + 20, height: conSummaryRadius * 2 + 20 }}
                   data-testid="circle-summary-cons"
                 >
-                  <span className="text-2xl font-bold text-amber-500">{conPercent}%</span>
+                  <span className="text-2xl font-bold text-orange-400">{conPercent}%</span>
                 </div>
-                <p className="text-sm font-bold uppercase tracking-widest text-amber-500">Cons</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-orange-400">Cons</p>
               </div>
             </div>
           </motion.div>
@@ -477,13 +477,13 @@ function BarChart({
     );
   }
 
-  const barBg = color === "pro" ? "bg-teal-500" : "bg-amber-500";
-  const barBorder = color === "pro" ? "border-teal-500" : "border-amber-500";
-  const selectedRing = color === "pro" ? "ring-teal-400" : "ring-amber-400";
+  const barBg = color === "pro" ? "bg-purple-700" : "bg-orange-400";
+  const barBorder = color === "pro" ? "border-purple-700" : "border-orange-400";
+  const selectedRing = color === "pro" ? "ring-purple-500" : "ring-orange-300";
 
   return (
-    <div className="border-2 border-muted rounded-lg p-4 overflow-x-auto">
-      <div className="flex gap-3 justify-center">
+    <div className="border-2 border-muted rounded-lg p-4">
+      <div className="flex gap-2 justify-center w-full">
         <AnimatePresence>
           {items.map((item) => {
             const heightPercent = item.weight / globalMax;
@@ -495,14 +495,13 @@ function BarChart({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-col items-center flex-shrink-0"
-                style={{ width: 72 }}
+                className="flex flex-col items-center flex-1 min-w-0"
                 data-testid={`bar-${color}-${item.id}`}
               >
-                <div className="flex flex-col justify-end" style={{ height: MAX_BAR_HEIGHT }}>
+                <div className="flex flex-col justify-end w-full" style={{ height: MAX_BAR_HEIGHT }}>
                   <motion.div
                     onClick={() => onSelect(item.id)}
-                    className={`w-16 cursor-pointer ${barBg} border-2 ${barBorder} rounded-md relative transition-all flex flex-col items-center justify-end p-1 overflow-hidden ${isSelected ? `ring-2 ${selectedRing} ring-offset-2` : "opacity-70 hover:opacity-100"}`}
+                    className={`w-full cursor-pointer ${barBg} border-2 ${barBorder} rounded-md relative transition-all flex flex-col items-center justify-end p-1 overflow-hidden ${isSelected ? `ring-2 ${selectedRing} ring-offset-2` : "opacity-70 hover:opacity-100"}`}
                     animate={{ height: barHeight }}
                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
                   >
