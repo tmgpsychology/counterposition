@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, ArrowLeft, Lightbulb, X } from "lucide-react";
+import { Plus, Minus, Trash2, ArrowLeft, Lightbulb, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
@@ -8,7 +8,7 @@ import { Link } from "wouter";
 interface CircleItem {
   id: string;
   label: string;
-  radius: number;
+  weight: number;
 }
 
 function generateId() {
@@ -113,34 +113,76 @@ function generateSuggestions(topic: string, existingPros: CircleItem[], existing
   return all.filter(s => !existingLabels.some(label => label.includes(s.text.toLowerCase().slice(0, 15))));
 }
 
-function packCircles(items: CircleItem[]): Array<{ x: number; y: number }> {
+const CONTAINER_SIZE = 300;
+const CONTAINER_HALF = CONTAINER_SIZE / 2;
+const PADDING = 6;
+const MIN_DISPLAY_RADIUS = 16;
+
+function computeScaledRadiiAndPositions(items: CircleItem[]): Array<{ x: number; y: number; displayRadius: number }> {
   if (items.length === 0) return [];
-  if (items.length === 1) return [{ x: 0, y: 0 }];
 
-  const padding = 6;
+  const totalWeight = items.reduce((s, i) => s + i.weight, 0);
+  const maxAllowedArea = Math.PI * (CONTAINER_HALF - 10) * (CONTAINER_HALF - 10) * 0.75;
+
+  const rawRadii = items.map(item => {
+    const fraction = item.weight / totalWeight;
+    const area = fraction * maxAllowedArea;
+    return Math.max(MIN_DISPLAY_RADIUS, Math.sqrt(area / Math.PI));
+  });
+
+  let scale = 1;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const scaledRadii = rawRadii.map(r => Math.max(MIN_DISPLAY_RADIUS, r * scale));
+    const positions = packWithRadii(scaledRadii);
+    
+    let allFit = true;
+    for (let i = 0; i < positions.length; i++) {
+      const r = scaledRadii[i];
+      const dist = Math.sqrt(positions[i].x * positions[i].x + positions[i].y * positions[i].y) + r;
+      if (dist > CONTAINER_HALF - 4) {
+        allFit = false;
+        break;
+      }
+    }
+
+    if (allFit) {
+      return positions.map((p, i) => ({ x: p.x, y: p.y, displayRadius: scaledRadii[i] }));
+    }
+    scale *= 0.85;
+  }
+
+  const finalRadii = rawRadii.map(r => Math.max(MIN_DISPLAY_RADIUS, r * scale));
+  const finalPositions = packWithRadii(finalRadii);
+  return finalPositions.map((p, i) => ({ x: p.x, y: p.y, displayRadius: finalRadii[i] }));
+}
+
+function packWithRadii(radii: number[]): Array<{ x: number; y: number }> {
+  if (radii.length === 0) return [];
+  if (radii.length === 1) return [{ x: 0, y: 0 }];
+
   const placed: Array<{ x: number; y: number; r: number }> = [];
+  placed.push({ x: 0, y: 0, r: radii[0] });
 
-  placed.push({ x: 0, y: 0, r: items[0].radius });
-
-  for (let i = 1; i < items.length; i++) {
-    const r = items[i].radius;
-    let bestPos = { x: 0, y: 0 };
+  for (let i = 1; i < radii.length; i++) {
+    const r = radii[i];
+    let bestPos = { x: 0, y: 200 };
     let bestDist = Infinity;
 
-    const angleSteps = 36;
-    let found = false;
+    const angleSteps = 48;
 
-    for (let dist = 0; dist < 500 && !found; dist += 3) {
+    for (let dist = 0; dist < CONTAINER_SIZE; dist += 2) {
       for (let a = 0; a < angleSteps; a++) {
-        const angle = (a / angleSteps) * 2 * Math.PI + (i * 0.7);
+        const angle = (a / angleSteps) * 2 * Math.PI + (i * 1.3);
         const cx = Math.cos(angle) * dist;
         const cy = Math.sin(angle) * dist;
+
+        if (Math.sqrt(cx * cx + cy * cy) + r > CONTAINER_HALF - 4) continue;
 
         let collides = false;
         for (const p of placed) {
           const dx = cx - p.x;
           const dy = cy - p.y;
-          const minDist = r + p.r + padding;
+          const minDist = r + p.r + PADDING;
           if (dx * dx + dy * dy < minDist * minDist) {
             collides = true;
             break;
@@ -152,10 +194,10 @@ function packCircles(items: CircleItem[]): Array<{ x: number; y: number }> {
           if (distFromCenter < bestDist) {
             bestDist = distFromCenter;
             bestPos = { x: cx, y: cy };
-            found = true;
           }
         }
       }
+      if (bestDist < Infinity) break;
     }
 
     placed.push({ x: bestPos.x, y: bestPos.y, r });
@@ -173,65 +215,59 @@ export default function ProsCons() {
   const [newCon, setNewCon] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const addPro = () => {
     if (!newPro.trim()) return;
-    setPros(prev => [...prev, { id: generateId(), label: newPro.trim(), radius: 40 }]);
+    setPros(prev => [...prev, { id: generateId(), label: newPro.trim(), weight: 5 }]);
     setNewPro("");
   };
 
   const addCon = () => {
     if (!newCon.trim()) return;
-    setCons(prev => [...prev, { id: generateId(), label: newCon.trim(), radius: 40 }]);
+    setCons(prev => [...prev, { id: generateId(), label: newCon.trim(), weight: 5 }]);
     setNewCon("");
   };
 
-  const removePro = (id: string) => setPros(prev => prev.filter(p => p.id !== id));
-  const removeCon = (id: string) => setCons(prev => prev.filter(c => c.id !== id));
+  const removePro = (id: string) => {
+    setPros(prev => prev.filter(p => p.id !== id));
+    if (selectedId === id) setSelectedId(null);
+  };
+  const removeCon = (id: string) => {
+    setCons(prev => prev.filter(c => c.id !== id));
+    if (selectedId === id) setSelectedId(null);
+  };
 
   const addSuggestion = (suggestion: Suggestion) => {
     if (suggestion.side === "pro") {
-      setPros(prev => [...prev, { id: generateId(), label: suggestion.text, radius: 40 }]);
+      setPros(prev => [...prev, { id: generateId(), label: suggestion.text, weight: 5 }]);
     } else {
-      setCons(prev => [...prev, { id: generateId(), label: suggestion.text, radius: 40 }]);
+      setCons(prev => [...prev, { id: generateId(), label: suggestion.text, weight: 5 }]);
     }
     setDismissedSuggestions(prev => new Set(prev).add(suggestion.text));
   };
 
-  const dismissSuggestion = (text: string) => {
-    setDismissedSuggestions(prev => new Set(prev).add(text));
-  };
-
-  const updateRadius = useCallback((id: string, side: "pro" | "con", newRadius: number) => {
-    const clamped = Math.max(20, Math.min(80, newRadius));
+  const increaseWeight = (id: string, side: "pro" | "con") => {
     if (side === "pro") {
-      setPros(prev => prev.map(p => p.id === id ? { ...p, radius: clamped } : p));
+      setPros(prev => prev.map(p => p.id === id ? { ...p, weight: Math.min(20, p.weight + 1) } : p));
     } else {
-      setCons(prev => prev.map(c => c.id === id ? { ...c, radius: clamped } : c));
+      setCons(prev => prev.map(c => c.id === id ? { ...c, weight: Math.min(20, c.weight + 1) } : c));
     }
-  }, []);
-
-  const handlePointerDown = (e: React.PointerEvent, id: string, side: "pro" | "con", currentRadius: number) => {
-    e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-
-    const onMove = (ev: PointerEvent) => {
-      const delta = -(ev.clientY - e.clientY);
-      const newRadius = currentRadius + delta * 0.5;
-      updateRadius(id, side, newRadius);
-    };
-
-    const onUp = () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-    };
-
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
   };
 
-  const totalProArea = pros.reduce((sum, p) => sum + circleArea(p.radius), 0);
-  const totalConArea = cons.reduce((sum, c) => sum + circleArea(c.radius), 0);
+  const decreaseWeight = (id: string, side: "pro" | "con") => {
+    if (side === "pro") {
+      setPros(prev => prev.map(p => p.id === id ? { ...p, weight: Math.max(1, p.weight - 1) } : p));
+    } else {
+      setCons(prev => prev.map(c => c.id === id ? { ...c, weight: Math.max(1, c.weight - 1) } : c));
+    }
+  };
+
+  const proLayout = useMemo(() => computeScaledRadiiAndPositions(pros), [pros]);
+  const conLayout = useMemo(() => computeScaledRadiiAndPositions(cons), [cons]);
+
+  const totalProArea = proLayout.reduce((sum, p) => sum + circleArea(p.displayRadius), 0);
+  const totalConArea = conLayout.reduce((sum, c) => sum + circleArea(c.displayRadius), 0);
   const totalArea = totalProArea + totalConArea;
 
   const maxSummaryRadius = 80;
@@ -251,9 +287,6 @@ export default function ProsCons() {
     return generateSuggestions(topic, pros, cons).filter(s => !dismissedSuggestions.has(s.text));
   }, [topic, pros, cons, dismissedSuggestions]);
 
-  const proPositions = useMemo(() => packCircles(pros), [pros]);
-  const conPositions = useMemo(() => packCircles(cons), [cons]);
-
   if (!topicSet) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
@@ -272,7 +305,7 @@ export default function ProsCons() {
             Weigh It Up
           </h1>
           <p className="text-lg text-muted-foreground">
-            Visual pros and cons. Add items, drag circles to resize their weight, and see which side wins.
+            Visual pros and cons. Add items, adjust their weight, and see which side wins.
           </p>
           <div className="space-y-4">
             <Input
@@ -300,7 +333,7 @@ export default function ProsCons() {
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-6xl mx-auto space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <Link href="/">
             <button className="flex items-center gap-2 text-sm uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors" data-testid="link-back-home-main">
               <ArrowLeft className="h-4 w-4" />
@@ -320,7 +353,7 @@ export default function ProsCons() {
               </Button>
             )}
             <Button
-              onClick={() => { setTopicSet(false); setTopic(""); setPros([]); setCons([]); setDismissedSuggestions(new Set()); setShowSuggestions(false); }}
+              onClick={() => { setTopicSet(false); setTopic(""); setPros([]); setCons([]); setDismissedSuggestions(new Set()); setShowSuggestions(false); setSelectedId(null); }}
               variant="outline"
               className="rounded-none border-2 border-foreground uppercase tracking-wider text-sm"
               data-testid="button-reset"
@@ -332,7 +365,7 @@ export default function ProsCons() {
 
         <div className="text-center space-y-2">
           <h1 className="text-4xl sm:text-5xl font-bold uppercase tracking-tighter" data-testid="text-topic">{topic}</h1>
-          <p className="text-muted-foreground text-sm uppercase tracking-widest">Drag circles up to increase weight, down to decrease</p>
+          <p className="text-muted-foreground text-sm uppercase tracking-widest">Tap a circle to adjust its weight</p>
         </div>
 
         <AnimatePresence>
@@ -393,31 +426,17 @@ export default function ProsCons() {
                 <Plus className="h-5 w-5" />
               </Button>
             </div>
-            <div className="relative min-h-[280px] flex items-center justify-center">
-              <div className="relative" style={{ width: 300, height: 280 }}>
-                <AnimatePresence>
-                  {pros.map((pro, i) => {
-                    const pos = proPositions[i] || { x: 0, y: 0 };
-                    return (
-                      <CircleBubble
-                        key={pro.id}
-                        item={pro}
-                        color="green"
-                        offsetX={pos.x}
-                        offsetY={pos.y}
-                        onPointerDown={(e) => handlePointerDown(e, pro.id, "pro", pro.radius)}
-                        onRemove={() => removePro(pro.id)}
-                      />
-                    );
-                  })}
-                </AnimatePresence>
-                {pros.length === 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <p className="text-muted-foreground text-sm uppercase tracking-widest">No pros yet</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            <BubbleContainer
+              items={pros}
+              layout={proLayout}
+              color="green"
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onIncrease={(id) => increaseWeight(id, "pro")}
+              onDecrease={(id) => decreaseWeight(id, "pro")}
+              onRemove={removePro}
+              emptyText="No pros yet"
+            />
           </div>
 
           <div className="space-y-6">
@@ -435,31 +454,17 @@ export default function ProsCons() {
                 <Plus className="h-5 w-5" />
               </Button>
             </div>
-            <div className="relative min-h-[280px] flex items-center justify-center">
-              <div className="relative" style={{ width: 300, height: 280 }}>
-                <AnimatePresence>
-                  {cons.map((con, i) => {
-                    const pos = conPositions[i] || { x: 0, y: 0 };
-                    return (
-                      <CircleBubble
-                        key={con.id}
-                        item={con}
-                        color="red"
-                        offsetX={pos.x}
-                        offsetY={pos.y}
-                        onPointerDown={(e) => handlePointerDown(e, con.id, "con", con.radius)}
-                        onRemove={() => removeCon(con.id)}
-                      />
-                    );
-                  })}
-                </AnimatePresence>
-                {cons.length === 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <p className="text-muted-foreground text-sm uppercase tracking-widest">No cons yet</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            <BubbleContainer
+              items={cons}
+              layout={conLayout}
+              color="red"
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onIncrease={(id) => increaseWeight(id, "con")}
+              onDecrease={(id) => decreaseWeight(id, "con")}
+              onRemove={removeCon}
+              emptyText="No cons yet"
+            />
           </div>
         </div>
 
@@ -499,55 +504,160 @@ export default function ProsCons() {
   );
 }
 
+function BubbleContainer({
+  items,
+  layout,
+  color,
+  selectedId,
+  onSelect,
+  onIncrease,
+  onDecrease,
+  onRemove,
+  emptyText,
+}: {
+  items: CircleItem[];
+  layout: Array<{ x: number; y: number; displayRadius: number }>;
+  color: "green" | "red";
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+  onIncrease: (id: string) => void;
+  onDecrease: (id: string) => void;
+  onRemove: (id: string) => void;
+  emptyText: string;
+}) {
+  return (
+    <div
+      className="relative mx-auto border-2 border-dashed border-muted rounded-full"
+      style={{ width: CONTAINER_SIZE, height: CONTAINER_SIZE }}
+    >
+      <AnimatePresence>
+        {items.map((item, i) => {
+          const pos = layout[i] || { x: 0, y: 0, displayRadius: 20 };
+          const isSelected = selectedId === item.id;
+          return (
+            <CircleBubble
+              key={item.id}
+              item={item}
+              displayRadius={pos.displayRadius}
+              color={color}
+              offsetX={pos.x}
+              offsetY={pos.y}
+              isSelected={isSelected}
+              onSelect={() => onSelect(isSelected ? null : item.id)}
+              onIncrease={() => onIncrease(item.id)}
+              onDecrease={() => onDecrease(item.id)}
+              onRemove={() => onRemove(item.id)}
+            />
+          );
+        })}
+      </AnimatePresence>
+      {items.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <p className="text-muted-foreground text-sm uppercase tracking-widest">{emptyText}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CircleBubble({
   item,
+  displayRadius,
   color,
   offsetX,
   offsetY,
-  onPointerDown,
+  isSelected,
+  onSelect,
+  onIncrease,
+  onDecrease,
   onRemove,
 }: {
   item: CircleItem;
+  displayRadius: number;
   color: "green" | "red";
   offsetX: number;
   offsetY: number;
-  onPointerDown: (e: React.PointerEvent) => void;
+  isSelected: boolean;
+  onSelect: () => void;
+  onIncrease: () => void;
+  onDecrease: () => void;
   onRemove: () => void;
 }) {
   const colorClasses = color === "green"
     ? "border-green-500 bg-green-500/10 text-green-500"
     : "border-red-500 bg-red-500/10 text-red-500";
 
+  const selectedRing = color === "green"
+    ? "ring-4 ring-green-500/40"
+    : "ring-4 ring-red-500/40";
+
+  const btnColor = color === "green"
+    ? "bg-green-500 text-white hover:bg-green-600"
+    : "bg-red-500 text-white hover:bg-red-600";
+
+  const diameter = displayRadius * 2;
+
   return (
     <motion.div
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0, opacity: 0 }}
-      className="absolute flex flex-col items-center gap-1"
+      className="absolute"
       style={{
-        left: `calc(50% + ${offsetX}px - ${item.radius}px)`,
-        top: `calc(50% + ${offsetY}px - ${item.radius}px)`,
+        left: `calc(50% + ${offsetX}px - ${displayRadius}px)`,
+        top: `calc(50% + ${offsetY}px - ${displayRadius}px)`,
+        zIndex: isSelected ? 20 : 1,
       }}
       data-testid={`circle-${color}-${item.id}`}
     >
       <div
-        className={`rounded-full border-4 ${colorClasses} flex items-center justify-center cursor-ns-resize select-none touch-none relative`}
-        style={{ width: item.radius * 2, height: item.radius * 2, transition: "width 0.1s, height 0.1s" }}
-        onPointerDown={onPointerDown}
+        className={`rounded-full border-4 ${colorClasses} ${isSelected ? selectedRing : ''} flex items-center justify-center cursor-pointer select-none relative transition-all duration-200`}
+        style={{ width: diameter, height: diameter }}
+        onClick={onSelect}
       >
-        <span className="text-xs font-bold uppercase tracking-wider text-center px-2 leading-tight pointer-events-none"
-          style={{ fontSize: Math.max(9, item.radius / 5), maxWidth: item.radius * 1.6 }}
+        <span className="text-xs font-bold uppercase tracking-wider text-center px-1 leading-tight pointer-events-none"
+          style={{ fontSize: Math.max(8, displayRadius / 5), maxWidth: displayRadius * 1.5 }}
         >
           {item.label}
         </span>
       </div>
-      <button
-        onClick={onRemove}
-        className="text-muted-foreground hover:text-destructive transition-colors z-10"
-        data-testid={`button-remove-${item.id}`}
-      >
-        <Trash2 className="h-3 w-3" />
-      </button>
+
+      {isSelected && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="absolute flex gap-1 items-center"
+          style={{
+            left: '50%',
+            top: diameter + 4,
+            transform: 'translateX(-50%)',
+            zIndex: 30,
+          }}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); onDecrease(); }}
+            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${btnColor} transition-colors`}
+            data-testid={`button-decrease-${item.id}`}
+          >
+            <Minus className="h-3 w-3" />
+          </button>
+          <span className="text-xs font-bold w-5 text-center">{item.weight}</span>
+          <button
+            onClick={(e) => { e.stopPropagation(); onIncrease(); }}
+            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${btnColor} transition-colors`}
+            data-testid={`button-increase-${item.id}`}
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-xs bg-muted text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors ml-1"
+            data-testid={`button-remove-${item.id}`}
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </motion.div>
+      )}
     </motion.div>
   );
 }
