@@ -115,96 +115,93 @@ function generateSuggestions(topic: string, existingPros: CircleItem[], existing
 
 const CONTAINER_SIZE = 300;
 const CONTAINER_HALF = CONTAINER_SIZE / 2;
-const PADDING = 6;
-const MIN_DISPLAY_RADIUS = 16;
+const GAP = 6;
 
 function computeScaledRadiiAndPositions(items: CircleItem[]): Array<{ x: number; y: number; displayRadius: number }> {
   if (items.length === 0) return [];
 
-  const totalWeight = items.reduce((s, i) => s + i.weight, 0);
-  const maxAllowedArea = Math.PI * (CONTAINER_HALF - 10) * (CONTAINER_HALF - 10) * 0.75;
+  const boundary = CONTAINER_HALF - 6;
+  const maxWeight = Math.max(...items.map(i => i.weight));
+  const maxSingleRadius = items.length === 1 ? boundary * 0.6 : boundary * 0.45;
+  const minRadius = 14;
 
-  const rawRadii = items.map(item => {
-    const fraction = item.weight / totalWeight;
-    const area = fraction * maxAllowedArea;
-    return Math.max(MIN_DISPLAY_RADIUS, Math.sqrt(area / Math.PI));
+  const desiredRadii = items.map(item => {
+    const ratio = item.weight / maxWeight;
+    return minRadius + ratio * (maxSingleRadius - minRadius);
   });
 
-  let scale = 1;
-  for (let attempt = 0; attempt < 10; attempt++) {
-    const scaledRadii = rawRadii.map(r => Math.max(MIN_DISPLAY_RADIUS, r * scale));
-    const positions = packWithRadii(scaledRadii);
-    
-    let allFit = true;
+  let scale = 1.0;
+  let result: Array<{ x: number; y: number; displayRadius: number }> = [];
+
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const radii = desiredRadii.map(r => Math.max(minRadius, r * scale));
+    const positions = placeCircles(radii, boundary);
+
+    let allInside = true;
     for (let i = 0; i < positions.length; i++) {
-      const r = scaledRadii[i];
-      const dist = Math.sqrt(positions[i].x * positions[i].x + positions[i].y * positions[i].y) + r;
-      if (dist > CONTAINER_HALF - 4) {
-        allFit = false;
+      const d = Math.sqrt(positions[i].x ** 2 + positions[i].y ** 2) + radii[i];
+      if (d > boundary) {
+        allInside = false;
         break;
       }
     }
 
-    if (allFit) {
-      return positions.map((p, i) => ({ x: p.x, y: p.y, displayRadius: scaledRadii[i] }));
+    if (allInside) {
+      result = positions.map((p, i) => ({ x: p.x, y: p.y, displayRadius: radii[i] }));
+      break;
     }
-    scale *= 0.85;
+    scale *= 0.88;
   }
 
-  for (let extra = 0; extra < 20; extra++) {
-    const shrunkRadii = rawRadii.map(r => Math.max(8, r * scale));
-    const positions = packWithRadii(shrunkRadii);
-    let allFit = true;
-    for (let i = 0; i < positions.length; i++) {
-      const dist = Math.sqrt(positions[i].x * positions[i].x + positions[i].y * positions[i].y) + shrunkRadii[i];
-      if (dist > CONTAINER_HALF - 4) { allFit = false; break; }
-    }
-    if (allFit) return positions.map((p, i) => ({ x: p.x, y: p.y, displayRadius: shrunkRadii[i] }));
-    scale *= 0.85;
+  if (result.length === 0) {
+    const radii = desiredRadii.map(r => Math.max(10, r * scale));
+    const positions = placeCircles(radii, boundary);
+    result = positions.map((p, i) => ({ x: p.x, y: p.y, displayRadius: radii[i] }));
   }
-  const finalRadii = rawRadii.map(r => Math.max(8, r * scale));
-  const finalPositions = packWithRadii(finalRadii);
-  return finalPositions.map((p, i) => ({ x: p.x, y: p.y, displayRadius: finalRadii[i] }));
+
+  return result;
 }
 
-function packWithRadii(radii: number[]): Array<{ x: number; y: number }> {
-  if (radii.length === 0) return [];
-  if (radii.length === 1) return [{ x: 0, y: 0 }];
+function placeCircles(radii: number[], boundary: number): Array<{ x: number; y: number }> {
+  const n = radii.length;
+  if (n === 0) return [];
+  if (n === 1) return [{ x: 0, y: 0 }];
 
-  const boundary = CONTAINER_HALF - 4;
   const placed: Array<{ x: number; y: number; r: number }> = [];
   placed.push({ x: 0, y: 0, r: radii[0] });
 
-  for (let i = 1; i < radii.length; i++) {
+  for (let i = 1; i < n; i++) {
     const r = radii[i];
     let bestPos: { x: number; y: number } | null = null;
-    let bestDist = Infinity;
+    let bestCenterDist = Infinity;
 
-    for (const p of placed) {
-      const touchDist = p.r + r + PADDING;
-      const angleSteps = 60;
-      for (let a = 0; a < angleSteps; a++) {
-        const angle = (a / angleSteps) * 2 * Math.PI;
-        const cx = p.x + Math.cos(angle) * touchDist;
-        const cy = p.y + Math.sin(angle) * touchDist;
+    for (let pi = 0; pi < placed.length; pi++) {
+      const p = placed[pi];
+      const dist = p.r + r + GAP;
+      for (let step = 0; step < 72; step++) {
+        const angle = (step / 72) * Math.PI * 2;
+        const cx = p.x + Math.cos(angle) * dist;
+        const cy = p.y + Math.sin(angle) * dist;
 
-        if (Math.sqrt(cx * cx + cy * cy) + r > boundary) continue;
+        const edgeDist = Math.sqrt(cx * cx + cy * cy) + r;
+        if (edgeDist > boundary) continue;
 
-        let collides = false;
-        for (const q of placed) {
+        let overlaps = false;
+        for (let j = 0; j < placed.length; j++) {
+          const q = placed[j];
           const dx = cx - q.x;
           const dy = cy - q.y;
-          const minD = r + q.r + PADDING;
-          if (dx * dx + dy * dy < minD * minD - 0.1) {
-            collides = true;
+          const needed = r + q.r + GAP;
+          if (dx * dx + dy * dy < needed * needed * 0.99) {
+            overlaps = true;
             break;
           }
         }
 
-        if (!collides) {
-          const d = cx * cx + cy * cy;
-          if (d < bestDist) {
-            bestDist = d;
+        if (!overlaps) {
+          const cd = cx * cx + cy * cy;
+          if (cd < bestCenterDist) {
+            bestCenterDist = cd;
             bestPos = { x: cx, y: cy };
           }
         }
@@ -212,27 +209,26 @@ function packWithRadii(radii: number[]): Array<{ x: number; y: number }> {
     }
 
     if (!bestPos) {
-      const angleSteps = 60;
-      for (let dist = r; dist < boundary; dist += 4) {
-        for (let a = 0; a < angleSteps; a++) {
-          const angle = (a / angleSteps) * 2 * Math.PI + i * 0.7;
-          const cx = Math.cos(angle) * dist;
-          const cy = Math.sin(angle) * dist;
+      for (let ring = 1; ring < boundary; ring += 3) {
+        for (let step = 0; step < 72; step++) {
+          const angle = (step / 72) * Math.PI * 2 + i;
+          const cx = Math.cos(angle) * ring;
+          const cy = Math.sin(angle) * ring;
 
           if (Math.sqrt(cx * cx + cy * cy) + r > boundary) continue;
 
-          let collides = false;
+          let overlaps = false;
           for (const q of placed) {
             const dx = cx - q.x;
             const dy = cy - q.y;
-            const minD = r + q.r + PADDING;
-            if (dx * dx + dy * dy < minD * minD - 0.1) {
-              collides = true;
+            const needed = r + q.r + GAP;
+            if (dx * dx + dy * dy < needed * needed * 0.99) {
+              overlaps = true;
               break;
             }
           }
 
-          if (!collides) {
+          if (!overlaps) {
             bestPos = { x: cx, y: cy };
             break;
           }
@@ -241,7 +237,13 @@ function packWithRadii(radii: number[]): Array<{ x: number; y: number }> {
       }
     }
 
-    placed.push({ x: bestPos?.x ?? 0, y: bestPos?.y ?? 0, r });
+    if (bestPos) {
+      placed.push({ x: bestPos.x, y: bestPos.y, r });
+    } else {
+      const angle = (i / n) * Math.PI * 2;
+      const d = Math.min(boundary - r, (placed[0].r + r + GAP));
+      placed.push({ x: Math.cos(angle) * d, y: Math.sin(angle) * d, r });
+    }
   }
 
   return placed.map(p => ({ x: p.x, y: p.y }));
