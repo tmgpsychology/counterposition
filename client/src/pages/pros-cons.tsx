@@ -287,7 +287,7 @@ export default function ProsCons() {
           <div className="flex-1 min-w-0">
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold uppercase tracking-wider text-green-500 border-b-2 border-green-500 pb-2">Pros</h2>
+                <h2 className="text-2xl font-bold uppercase tracking-wider text-teal-500 border-b-2 border-teal-500 pb-2">Pros</h2>
                 <div className="flex gap-2">
                   <Input
                     value={newPro}
@@ -303,7 +303,7 @@ export default function ProsCons() {
                 </div>
                 <BarChart
                   items={pros}
-                  color="green"
+                  color="pro"
                   globalMax={globalMaxWeight}
                   selectedId={selectedBarId}
                   onSelect={(id) => selectBar(id, "pro")}
@@ -313,7 +313,7 @@ export default function ProsCons() {
               </div>
 
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold uppercase tracking-wider text-red-500 border-b-2 border-red-500 pb-2">Cons</h2>
+                <h2 className="text-2xl font-bold uppercase tracking-wider text-amber-500 border-b-2 border-amber-500 pb-2">Cons</h2>
                 <div className="flex gap-2">
                   <Input
                     value={newCon}
@@ -329,7 +329,7 @@ export default function ProsCons() {
                 </div>
                 <BarChart
                   items={cons}
-                  color="red"
+                  color="con"
                   globalMax={globalMaxWeight}
                   selectedId={selectedBarId}
                   onSelect={(id) => selectBar(id, "con")}
@@ -341,11 +341,11 @@ export default function ProsCons() {
           </div>
 
           {(pros.length > 0 || cons.length > 0) && (
-            <div className="flex flex-col items-center justify-center gap-3 border-2 border-muted bg-muted/20 px-3 py-4 self-start sticky top-4">
+            <div className="flex flex-col items-center justify-center gap-3 border-2 border-muted bg-muted/20 rounded-lg px-3 py-4 self-start sticky top-4">
               <button
                 onClick={increaseSelected}
                 disabled={!selectedItem || selectedItem.weight >= 20}
-                className="w-10 h-10 rounded-none border-2 border-foreground flex items-center justify-center font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground hover:text-background transition-colors"
+                className="w-10 h-10 rounded-md border-2 border-foreground flex items-center justify-center font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground hover:text-background transition-colors"
                 data-testid="button-global-increase"
               >
                 <Plus className="h-5 w-5" />
@@ -353,7 +353,7 @@ export default function ProsCons() {
               <div className="text-center min-w-[48px]">
                 {selectedItem ? (
                   <div>
-                    <p className={`text-[9px] font-bold uppercase tracking-widest leading-tight ${selectedBarSide === "pro" ? "text-green-500" : "text-red-500"}`}>
+                    <p className={`text-[9px] font-bold uppercase tracking-widest leading-tight ${selectedBarSide === "pro" ? "text-teal-500" : "text-amber-500"}`}>
                       {selectedItem.label}
                     </p>
                     <p className="text-xl font-bold">{selectedItem.weight}</p>
@@ -365,7 +365,7 @@ export default function ProsCons() {
               <button
                 onClick={decreaseSelected}
                 disabled={!selectedItem || selectedItem.weight <= 1}
-                className="w-10 h-10 rounded-none border-2 border-foreground flex items-center justify-center font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground hover:text-background transition-colors"
+                className="w-10 h-10 rounded-md border-2 border-foreground flex items-center justify-center font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground hover:text-background transition-colors"
                 data-testid="button-global-decrease"
               >
                 <Minus className="h-5 w-5" />
@@ -382,7 +382,7 @@ export default function ProsCons() {
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="border-2 border-muted p-6 space-y-4">
+              <div className="border-2 border-muted rounded-lg p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold uppercase tracking-wider flex items-center gap-2">
                     <Lightbulb className="h-5 w-5" />
@@ -398,10 +398,10 @@ export default function ProsCons() {
                       key={suggestion.text}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className={`px-4 py-2 border-2 text-sm font-medium uppercase tracking-wider transition-all hover:scale-105 ${
+                      className={`px-4 py-2 border-2 rounded-md text-sm font-medium uppercase tracking-wider transition-all hover:scale-105 ${
                         suggestion.side === "pro"
-                          ? "border-green-500/50 text-green-500 hover:bg-green-500/10"
-                          : "border-red-500/50 text-red-500 hover:bg-red-500/10"
+                          ? "border-teal-500/50 text-teal-500 hover:bg-teal-500/10"
+                          : "border-amber-500/50 text-amber-500 hover:bg-amber-500/10"
                       }`}
                       onClick={() => addSuggestion(suggestion)}
                       data-testid={`button-suggestion-${suggestion.text.slice(0, 20)}`}
@@ -426,23 +426,23 @@ export default function ProsCons() {
             <div className="grid grid-cols-2 gap-8">
               <div className="flex flex-col items-center gap-4">
                 <div
-                  className="rounded-full bg-green-500/20 border-4 border-green-500 flex items-center justify-center transition-all duration-500"
+                  className="rounded-full bg-teal-500/20 border-4 border-teal-500 flex items-center justify-center transition-all duration-500"
                   style={{ width: proSummaryRadius * 2 + 20, height: proSummaryRadius * 2 + 20 }}
                   data-testid="circle-summary-pros"
                 >
-                  <span className="text-2xl font-bold text-green-500">{proPercent}%</span>
+                  <span className="text-2xl font-bold text-teal-500">{proPercent}%</span>
                 </div>
-                <p className="text-sm font-bold uppercase tracking-widest text-green-500">Pros</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-teal-500">Pros</p>
               </div>
               <div className="flex flex-col items-center gap-4">
                 <div
-                  className="rounded-full bg-red-500/20 border-4 border-red-500 flex items-center justify-center transition-all duration-500"
+                  className="rounded-full bg-amber-500/20 border-4 border-amber-500 flex items-center justify-center transition-all duration-500"
                   style={{ width: conSummaryRadius * 2 + 20, height: conSummaryRadius * 2 + 20 }}
                   data-testid="circle-summary-cons"
                 >
-                  <span className="text-2xl font-bold text-red-500">{conPercent}%</span>
+                  <span className="text-2xl font-bold text-amber-500">{conPercent}%</span>
                 </div>
-                <p className="text-sm font-bold uppercase tracking-widest text-red-500">Cons</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-amber-500">Cons</p>
               </div>
             </div>
           </motion.div>
@@ -462,7 +462,7 @@ function BarChart({
   emptyText,
 }: {
   items: BarItem[];
-  color: "green" | "red";
+  color: "pro" | "con";
   globalMax: number;
   selectedId: string | null;
   onSelect: (id: string) => void;
@@ -471,24 +471,23 @@ function BarChart({
 }) {
   if (items.length === 0) {
     return (
-      <div className="flex items-end justify-center h-[260px] border-2 border-dashed border-muted p-4">
+      <div className="flex items-end justify-center h-[260px] border-2 border-dashed border-muted rounded-lg p-4">
         <p className="text-muted-foreground text-sm uppercase tracking-widest">{emptyText}</p>
       </div>
     );
   }
 
-  const barColor = color === "green" ? "bg-green-500" : "bg-red-500";
-  const barBorder = color === "green" ? "border-green-500" : "border-red-500";
-  const textColor = color === "green" ? "text-green-500" : "text-red-500";
-  const selectedRing = color === "green" ? "ring-green-500" : "ring-red-500";
+  const barBg = color === "pro" ? "bg-teal-500" : "bg-amber-500";
+  const barBorder = color === "pro" ? "border-teal-500" : "border-amber-500";
+  const selectedRing = color === "pro" ? "ring-teal-400" : "ring-amber-400";
 
   return (
-    <div className="border-2 border-muted p-4 overflow-x-auto">
+    <div className="border-2 border-muted rounded-lg p-4 overflow-x-auto">
       <div className="flex gap-3 justify-center">
         <AnimatePresence>
           {items.map((item) => {
             const heightPercent = item.weight / globalMax;
-            const barHeight = Math.max(16, heightPercent * MAX_BAR_HEIGHT);
+            const barHeight = Math.max(40, heightPercent * MAX_BAR_HEIGHT);
             const isSelected = selectedId === item.id;
             return (
               <motion.div
@@ -497,30 +496,29 @@ function BarChart({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="flex flex-col items-center flex-shrink-0"
-                style={{ width: 64 }}
+                style={{ width: 72 }}
                 data-testid={`bar-${color}-${item.id}`}
               >
-                <span className={`text-xs font-bold mb-1 ${textColor}`}>{item.weight}</span>
                 <div className="flex flex-col justify-end" style={{ height: MAX_BAR_HEIGHT }}>
                   <motion.div
                     onClick={() => onSelect(item.id)}
-                    className={`w-12 cursor-pointer ${barColor}/80 border-2 ${barBorder} relative transition-all ${isSelected ? `ring-2 ${selectedRing} ring-offset-2` : "opacity-70 hover:opacity-100"}`}
+                    className={`w-16 cursor-pointer ${barBg} border-2 ${barBorder} rounded-md relative transition-all flex flex-col items-center justify-end p-1 overflow-hidden ${isSelected ? `ring-2 ${selectedRing} ring-offset-2` : "opacity-70 hover:opacity-100"}`}
                     animate={{ height: barHeight }}
                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  />
-                </div>
-                <div className="flex flex-col items-center gap-1 mt-2">
-                  <p className={`text-[10px] font-bold uppercase tracking-wider ${textColor} text-center leading-tight max-w-[64px]`}>
-                    {item.label}
-                  </p>
-                  <button
-                    onClick={() => onRemove(item.id)}
-                    className="text-muted-foreground hover:text-destructive transition-colors"
-                    data-testid={`button-remove-${item.id}`}
                   >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
+                    <p className="text-[8px] font-bold uppercase tracking-wider text-white text-center leading-tight break-words w-full">
+                      {item.label}
+                    </p>
+                    <span className="text-xs font-bold text-white/90 mt-0.5">{item.weight}</span>
+                  </motion.div>
                 </div>
+                <button
+                  onClick={() => onRemove(item.id)}
+                  className="text-muted-foreground hover:text-destructive transition-colors mt-2"
+                  data-testid={`button-remove-${item.id}`}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
               </motion.div>
             );
           })}
