@@ -1,11 +1,11 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Minus, Trash2, ArrowLeft, Lightbulb, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
 
-interface CircleItem {
+interface BarItem {
   id: string;
   label: string;
   weight: number;
@@ -15,16 +15,12 @@ function generateId() {
   return Math.random().toString(36).substring(2, 9);
 }
 
-function circleArea(radius: number) {
-  return Math.PI * radius * radius;
-}
-
 interface Suggestion {
   text: string;
   side: "pro" | "con";
 }
 
-function generateSuggestions(topic: string, existingPros: CircleItem[], existingCons: CircleItem[]): Suggestion[] {
+function generateSuggestions(topic: string, existingPros: BarItem[], existingCons: BarItem[]): Suggestion[] {
   const t = topic.toLowerCase();
   const existingLabels = [...existingPros, ...existingCons].map(i => i.label.toLowerCase());
 
@@ -109,156 +105,20 @@ function generateSuggestions(topic: string, existingPros: CircleItem[], existing
   }
 
   const all = [...contextual, ...universalPrompts];
-
   return all.filter(s => !existingLabels.some(label => label.includes(s.text.toLowerCase().slice(0, 15))));
 }
 
-const CONTAINER_SIZE = 300;
-const CONTAINER_HALF = CONTAINER_SIZE / 2;
-const GAP = 6;
-
-function computeScaledRadiiAndPositions(items: CircleItem[]): Array<{ x: number; y: number; displayRadius: number }> {
-  if (items.length === 0) return [];
-
-  const boundary = CONTAINER_HALF - 6;
-  const maxWeight = Math.max(...items.map(i => i.weight));
-  const maxSingleRadius = items.length === 1 ? boundary * 0.6 : boundary * 0.45;
-  const minRadius = 14;
-
-  const desiredRadii = items.map(item => {
-    const ratio = item.weight / maxWeight;
-    return minRadius + ratio * (maxSingleRadius - minRadius);
-  });
-
-  let scale = 1.0;
-  let result: Array<{ x: number; y: number; displayRadius: number }> = [];
-
-  for (let attempt = 0; attempt < 30; attempt++) {
-    const radii = desiredRadii.map(r => Math.max(minRadius, r * scale));
-    const positions = placeCircles(radii, boundary);
-
-    let allInside = true;
-    for (let i = 0; i < positions.length; i++) {
-      const d = Math.sqrt(positions[i].x ** 2 + positions[i].y ** 2) + radii[i];
-      if (d > boundary) {
-        allInside = false;
-        break;
-      }
-    }
-
-    if (allInside) {
-      result = positions.map((p, i) => ({ x: p.x, y: p.y, displayRadius: radii[i] }));
-      break;
-    }
-    scale *= 0.88;
-  }
-
-  if (result.length === 0) {
-    const radii = desiredRadii.map(r => Math.max(10, r * scale));
-    const positions = placeCircles(radii, boundary);
-    result = positions.map((p, i) => ({ x: p.x, y: p.y, displayRadius: radii[i] }));
-  }
-
-  return result;
-}
-
-function placeCircles(radii: number[], boundary: number): Array<{ x: number; y: number }> {
-  const n = radii.length;
-  if (n === 0) return [];
-  if (n === 1) return [{ x: 0, y: 0 }];
-
-  const placed: Array<{ x: number; y: number; r: number }> = [];
-  placed.push({ x: 0, y: 0, r: radii[0] });
-
-  for (let i = 1; i < n; i++) {
-    const r = radii[i];
-    let bestPos: { x: number; y: number } | null = null;
-    let bestCenterDist = Infinity;
-
-    for (let pi = 0; pi < placed.length; pi++) {
-      const p = placed[pi];
-      const dist = p.r + r + GAP;
-      for (let step = 0; step < 72; step++) {
-        const angle = (step / 72) * Math.PI * 2;
-        const cx = p.x + Math.cos(angle) * dist;
-        const cy = p.y + Math.sin(angle) * dist;
-
-        const edgeDist = Math.sqrt(cx * cx + cy * cy) + r;
-        if (edgeDist > boundary) continue;
-
-        let overlaps = false;
-        for (let j = 0; j < placed.length; j++) {
-          const q = placed[j];
-          const dx = cx - q.x;
-          const dy = cy - q.y;
-          const needed = r + q.r + GAP;
-          if (dx * dx + dy * dy < needed * needed * 0.99) {
-            overlaps = true;
-            break;
-          }
-        }
-
-        if (!overlaps) {
-          const cd = cx * cx + cy * cy;
-          if (cd < bestCenterDist) {
-            bestCenterDist = cd;
-            bestPos = { x: cx, y: cy };
-          }
-        }
-      }
-    }
-
-    if (!bestPos) {
-      for (let ring = 1; ring < boundary; ring += 3) {
-        for (let step = 0; step < 72; step++) {
-          const angle = (step / 72) * Math.PI * 2 + i;
-          const cx = Math.cos(angle) * ring;
-          const cy = Math.sin(angle) * ring;
-
-          if (Math.sqrt(cx * cx + cy * cy) + r > boundary) continue;
-
-          let overlaps = false;
-          for (const q of placed) {
-            const dx = cx - q.x;
-            const dy = cy - q.y;
-            const needed = r + q.r + GAP;
-            if (dx * dx + dy * dy < needed * needed * 0.99) {
-              overlaps = true;
-              break;
-            }
-          }
-
-          if (!overlaps) {
-            bestPos = { x: cx, y: cy };
-            break;
-          }
-        }
-        if (bestPos) break;
-      }
-    }
-
-    if (bestPos) {
-      placed.push({ x: bestPos.x, y: bestPos.y, r });
-    } else {
-      const angle = (i / n) * Math.PI * 2;
-      const d = Math.min(boundary - r, (placed[0].r + r + GAP));
-      placed.push({ x: Math.cos(angle) * d, y: Math.sin(angle) * d, r });
-    }
-  }
-
-  return placed.map(p => ({ x: p.x, y: p.y }));
-}
+const MAX_BAR_HEIGHT = 200;
 
 export default function ProsCons() {
   const [topic, setTopic] = useState("");
   const [topicSet, setTopicSet] = useState(false);
-  const [pros, setPros] = useState<CircleItem[]>([]);
-  const [cons, setCons] = useState<CircleItem[]>([]);
+  const [pros, setPros] = useState<BarItem[]>([]);
+  const [cons, setCons] = useState<BarItem[]>([]);
   const [newPro, setNewPro] = useState("");
   const [newCon, setNewCon] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
-  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const addPro = () => {
     if (!newPro.trim()) return;
@@ -272,14 +132,8 @@ export default function ProsCons() {
     setNewCon("");
   };
 
-  const removePro = (id: string) => {
-    setPros(prev => prev.filter(p => p.id !== id));
-    if (selectedId === id) setSelectedId(null);
-  };
-  const removeCon = (id: string) => {
-    setCons(prev => prev.filter(c => c.id !== id));
-    if (selectedId === id) setSelectedId(null);
-  };
+  const removePro = (id: string) => setPros(prev => prev.filter(p => p.id !== id));
+  const removeCon = (id: string) => setCons(prev => prev.filter(c => c.id !== id));
 
   const addSuggestion = (suggestion: Suggestion) => {
     if (suggestion.side === "pro") {
@@ -306,29 +160,29 @@ export default function ProsCons() {
     }
   };
 
-  const proLayout = useMemo(() => computeScaledRadiiAndPositions(pros), [pros]);
-  const conLayout = useMemo(() => computeScaledRadiiAndPositions(cons), [cons]);
-
-  const totalProArea = proLayout.reduce((sum, p) => sum + circleArea(p.displayRadius), 0);
-  const totalConArea = conLayout.reduce((sum, c) => sum + circleArea(c.displayRadius), 0);
-  const totalArea = totalProArea + totalConArea;
+  const totalProWeight = pros.reduce((sum, p) => sum + p.weight, 0);
+  const totalConWeight = cons.reduce((sum, c) => sum + c.weight, 0);
+  const totalWeight = totalProWeight + totalConWeight;
 
   const maxSummaryRadius = 80;
   let proSummaryRadius = 0;
   let conSummaryRadius = 0;
 
-  if (totalArea > 0) {
-    const maxArea = Math.max(totalProArea, totalConArea);
-    proSummaryRadius = Math.sqrt(totalProArea / maxArea) * maxSummaryRadius;
-    conSummaryRadius = Math.sqrt(totalConArea / maxArea) * maxSummaryRadius;
+  if (totalWeight > 0) {
+    const maxW = Math.max(totalProWeight, totalConWeight);
+    proSummaryRadius = Math.sqrt(totalProWeight / maxW) * maxSummaryRadius;
+    conSummaryRadius = Math.sqrt(totalConWeight / maxW) * maxSummaryRadius;
   }
 
-  const proPercent = totalArea > 0 ? Math.round((totalProArea / totalArea) * 100) : 0;
-  const conPercent = totalArea > 0 ? Math.round((totalConArea / totalArea) * 100) : 0;
+  const proPercent = totalWeight > 0 ? Math.round((totalProWeight / totalWeight) * 100) : 0;
+  const conPercent = totalWeight > 0 ? Math.round((totalConWeight / totalWeight) * 100) : 0;
 
   const suggestions = useMemo(() => {
     return generateSuggestions(topic, pros, cons).filter(s => !dismissedSuggestions.has(s.text));
   }, [topic, pros, cons, dismissedSuggestions]);
+
+  const allItems = [...pros, ...cons];
+  const globalMaxWeight = allItems.length > 0 ? Math.max(...allItems.map(i => i.weight)) : 1;
 
   if (!topicSet) {
     return (
@@ -396,7 +250,7 @@ export default function ProsCons() {
               </Button>
             )}
             <Button
-              onClick={() => { setTopicSet(false); setTopic(""); setPros([]); setCons([]); setDismissedSuggestions(new Set()); setShowSuggestions(false); setSelectedId(null); }}
+              onClick={() => { setTopicSet(false); setTopic(""); setPros([]); setCons([]); setDismissedSuggestions(new Set()); setShowSuggestions(false); }}
               variant="outline"
               className="rounded-none border-2 border-foreground uppercase tracking-wider text-sm"
               data-testid="button-reset"
@@ -408,7 +262,6 @@ export default function ProsCons() {
 
         <div className="text-center space-y-2">
           <h1 className="text-4xl sm:text-5xl font-bold uppercase tracking-tighter" data-testid="text-topic">{topic}</h1>
-          <p className="text-muted-foreground text-sm uppercase tracking-widest">Tap a circle to adjust its weight</p>
         </div>
 
         <AnimatePresence>
@@ -469,12 +322,10 @@ export default function ProsCons() {
                 <Plus className="h-5 w-5" />
               </Button>
             </div>
-            <BubbleContainer
+            <BarChart
               items={pros}
-              layout={proLayout}
               color="green"
-              selectedId={selectedId}
-              onSelect={setSelectedId}
+              globalMax={globalMaxWeight}
               onIncrease={(id) => increaseWeight(id, "pro")}
               onDecrease={(id) => decreaseWeight(id, "pro")}
               onRemove={removePro}
@@ -497,12 +348,10 @@ export default function ProsCons() {
                 <Plus className="h-5 w-5" />
               </Button>
             </div>
-            <BubbleContainer
+            <BarChart
               items={cons}
-              layout={conLayout}
               color="red"
-              selectedId={selectedId}
-              onSelect={setSelectedId}
+              globalMax={globalMaxWeight}
               onIncrease={(id) => increaseWeight(id, "con")}
               onDecrease={(id) => decreaseWeight(id, "con")}
               onRemove={removeCon}
@@ -547,160 +396,92 @@ export default function ProsCons() {
   );
 }
 
-function BubbleContainer({
+function BarChart({
   items,
-  layout,
   color,
-  selectedId,
-  onSelect,
+  globalMax,
   onIncrease,
   onDecrease,
   onRemove,
   emptyText,
 }: {
-  items: CircleItem[];
-  layout: Array<{ x: number; y: number; displayRadius: number }>;
+  items: BarItem[];
   color: "green" | "red";
-  selectedId: string | null;
-  onSelect: (id: string | null) => void;
+  globalMax: number;
   onIncrease: (id: string) => void;
   onDecrease: (id: string) => void;
   onRemove: (id: string) => void;
   emptyText: string;
 }) {
-  return (
-    <div
-      className="relative mx-auto border-2 border-dashed border-muted rounded-full"
-      style={{ width: CONTAINER_SIZE, height: CONTAINER_SIZE }}
-    >
-      <AnimatePresence>
-        {items.map((item, i) => {
-          const pos = layout[i] || { x: 0, y: 0, displayRadius: 20 };
-          const isSelected = selectedId === item.id;
-          return (
-            <CircleBubble
-              key={item.id}
-              item={item}
-              displayRadius={pos.displayRadius}
-              color={color}
-              offsetX={pos.x}
-              offsetY={pos.y}
-              isSelected={isSelected}
-              onSelect={() => onSelect(isSelected ? null : item.id)}
-              onIncrease={() => onIncrease(item.id)}
-              onDecrease={() => onDecrease(item.id)}
-              onRemove={() => onRemove(item.id)}
-            />
-          );
-        })}
-      </AnimatePresence>
-      {items.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <p className="text-muted-foreground text-sm uppercase tracking-widest">{emptyText}</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CircleBubble({
-  item,
-  displayRadius,
-  color,
-  offsetX,
-  offsetY,
-  isSelected,
-  onSelect,
-  onIncrease,
-  onDecrease,
-  onRemove,
-}: {
-  item: CircleItem;
-  displayRadius: number;
-  color: "green" | "red";
-  offsetX: number;
-  offsetY: number;
-  isSelected: boolean;
-  onSelect: () => void;
-  onIncrease: () => void;
-  onDecrease: () => void;
-  onRemove: () => void;
-}) {
-  const colorClasses = color === "green"
-    ? "border-green-500 bg-green-500/10 text-green-500"
-    : "border-red-500 bg-red-500/10 text-red-500";
-
-  const selectedRing = color === "green"
-    ? "ring-4 ring-green-500/40"
-    : "ring-4 ring-red-500/40";
-
-  const btnColor = color === "green"
-    ? "bg-green-500 text-white hover:bg-green-600"
-    : "bg-red-500 text-white hover:bg-red-600";
-
-  const diameter = displayRadius * 2;
-
-  return (
-    <motion.div
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0, opacity: 0 }}
-      className="absolute"
-      style={{
-        left: `calc(50% + ${offsetX}px - ${displayRadius}px)`,
-        top: `calc(50% + ${offsetY}px - ${displayRadius}px)`,
-        zIndex: isSelected ? 20 : 1,
-      }}
-      data-testid={`circle-${color}-${item.id}`}
-    >
-      <div
-        className={`rounded-full border-4 ${colorClasses} ${isSelected ? selectedRing : ''} flex items-center justify-center cursor-pointer select-none relative transition-all duration-200`}
-        style={{ width: diameter, height: diameter }}
-        onClick={onSelect}
-      >
-        <span className="text-xs font-bold uppercase tracking-wider text-center px-1 leading-tight pointer-events-none"
-          style={{ fontSize: Math.max(8, displayRadius / 5), maxWidth: displayRadius * 1.5 }}
-        >
-          {item.label}
-        </span>
+  if (items.length === 0) {
+    return (
+      <div className="flex items-end justify-center h-[260px] border-2 border-dashed border-muted p-4">
+        <p className="text-muted-foreground text-sm uppercase tracking-widest">{emptyText}</p>
       </div>
+    );
+  }
 
-      {isSelected && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="absolute flex gap-1 items-center"
-          style={{
-            left: '50%',
-            top: diameter + 4,
-            transform: 'translateX(-50%)',
-            zIndex: 30,
-          }}
-        >
-          <button
-            onClick={(e) => { e.stopPropagation(); onDecrease(); }}
-            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${btnColor} transition-colors`}
-            data-testid={`button-decrease-${item.id}`}
-          >
-            <Minus className="h-3 w-3" />
-          </button>
-          <span className="text-xs font-bold w-5 text-center">{item.weight}</span>
-          <button
-            onClick={(e) => { e.stopPropagation(); onIncrease(); }}
-            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${btnColor} transition-colors`}
-            data-testid={`button-increase-${item.id}`}
-          >
-            <Plus className="h-3 w-3" />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onRemove(); }}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-xs bg-muted text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors ml-1"
-            data-testid={`button-remove-${item.id}`}
-          >
-            <Trash2 className="h-3 w-3" />
-          </button>
-        </motion.div>
-      )}
-    </motion.div>
+  const barColor = color === "green" ? "bg-green-500" : "bg-red-500";
+  const barBorder = color === "green" ? "border-green-500" : "border-red-500";
+  const textColor = color === "green" ? "text-green-500" : "text-red-500";
+  const btnBg = color === "green" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600";
+
+  return (
+    <div className="border-2 border-muted p-4">
+      <div className="flex items-end gap-3 justify-center" style={{ minHeight: MAX_BAR_HEIGHT + 80 }}>
+        <AnimatePresence>
+          {items.map((item) => {
+            const heightPercent = item.weight / globalMax;
+            const barHeight = Math.max(20, heightPercent * MAX_BAR_HEIGHT);
+            return (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, scaleY: 0 }}
+                animate={{ opacity: 1, scaleY: 1 }}
+                exit={{ opacity: 0, scaleY: 0 }}
+                style={{ originY: 1 }}
+                className="flex flex-col items-center gap-2"
+                data-testid={`bar-${color}-${item.id}`}
+              >
+                <div className="flex gap-1 mb-1">
+                  <button
+                    onClick={() => onDecrease(item.id)}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center ${btnBg} text-white transition-colors`}
+                    data-testid={`button-decrease-${item.id}`}
+                  >
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <span className={`text-xs font-bold w-5 text-center ${textColor}`}>{item.weight}</span>
+                  <button
+                    onClick={() => onIncrease(item.id)}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center ${btnBg} text-white transition-colors`}
+                    data-testid={`button-increase-${item.id}`}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                </div>
+                <motion.div
+                  className={`w-12 sm:w-16 ${barColor}/80 border-2 ${barBorder} relative`}
+                  animate={{ height: barHeight }}
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                />
+                <div className="flex flex-col items-center gap-1 mt-1">
+                  <p className={`text-[10px] font-bold uppercase tracking-wider ${textColor} text-center leading-tight max-w-[70px]`}>
+                    {item.label}
+                  </p>
+                  <button
+                    onClick={() => onRemove(item.id)}
+                    className="text-muted-foreground hover:text-destructive transition-colors"
+                    data-testid={`button-remove-${item.id}`}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
+    </div>
   );
 }
