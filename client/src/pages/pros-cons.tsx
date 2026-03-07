@@ -151,7 +151,18 @@ function computeScaledRadiiAndPositions(items: CircleItem[]): Array<{ x: number;
     scale *= 0.85;
   }
 
-  const finalRadii = rawRadii.map(r => Math.max(MIN_DISPLAY_RADIUS, r * scale));
+  for (let extra = 0; extra < 20; extra++) {
+    const shrunkRadii = rawRadii.map(r => Math.max(8, r * scale));
+    const positions = packWithRadii(shrunkRadii);
+    let allFit = true;
+    for (let i = 0; i < positions.length; i++) {
+      const dist = Math.sqrt(positions[i].x * positions[i].x + positions[i].y * positions[i].y) + shrunkRadii[i];
+      if (dist > CONTAINER_HALF - 4) { allFit = false; break; }
+    }
+    if (allFit) return positions.map((p, i) => ({ x: p.x, y: p.y, displayRadius: shrunkRadii[i] }));
+    scale *= 0.85;
+  }
+  const finalRadii = rawRadii.map(r => Math.max(8, r * scale));
   const finalPositions = packWithRadii(finalRadii);
   return finalPositions.map((p, i) => ({ x: p.x, y: p.y, displayRadius: finalRadii[i] }));
 }
@@ -165,7 +176,7 @@ function packWithRadii(radii: number[]): Array<{ x: number; y: number }> {
 
   for (let i = 1; i < radii.length; i++) {
     const r = radii[i];
-    let bestPos = { x: 0, y: 200 };
+    let bestPos = { x: 0, y: 0 };
     let bestDist = Infinity;
 
     const angleSteps = 48;
