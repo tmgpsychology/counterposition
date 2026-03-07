@@ -171,47 +171,77 @@ function packWithRadii(radii: number[]): Array<{ x: number; y: number }> {
   if (radii.length === 0) return [];
   if (radii.length === 1) return [{ x: 0, y: 0 }];
 
+  const boundary = CONTAINER_HALF - 4;
   const placed: Array<{ x: number; y: number; r: number }> = [];
   placed.push({ x: 0, y: 0, r: radii[0] });
 
   for (let i = 1; i < radii.length; i++) {
     const r = radii[i];
-    let bestPos = { x: 0, y: 0 };
+    let bestPos: { x: number; y: number } | null = null;
     let bestDist = Infinity;
 
-    const angleSteps = 48;
-
-    for (let dist = 0; dist < CONTAINER_SIZE; dist += 2) {
+    for (const p of placed) {
+      const touchDist = p.r + r + PADDING;
+      const angleSteps = 60;
       for (let a = 0; a < angleSteps; a++) {
-        const angle = (a / angleSteps) * 2 * Math.PI + (i * 1.3);
-        const cx = Math.cos(angle) * dist;
-        const cy = Math.sin(angle) * dist;
+        const angle = (a / angleSteps) * 2 * Math.PI;
+        const cx = p.x + Math.cos(angle) * touchDist;
+        const cy = p.y + Math.sin(angle) * touchDist;
 
-        if (Math.sqrt(cx * cx + cy * cy) + r > CONTAINER_HALF - 4) continue;
+        if (Math.sqrt(cx * cx + cy * cy) + r > boundary) continue;
 
         let collides = false;
-        for (const p of placed) {
-          const dx = cx - p.x;
-          const dy = cy - p.y;
-          const minDist = r + p.r + PADDING;
-          if (dx * dx + dy * dy < minDist * minDist) {
+        for (const q of placed) {
+          const dx = cx - q.x;
+          const dy = cy - q.y;
+          const minD = r + q.r + PADDING;
+          if (dx * dx + dy * dy < minD * minD - 0.1) {
             collides = true;
             break;
           }
         }
 
         if (!collides) {
-          const distFromCenter = cx * cx + cy * cy;
-          if (distFromCenter < bestDist) {
-            bestDist = distFromCenter;
+          const d = cx * cx + cy * cy;
+          if (d < bestDist) {
+            bestDist = d;
             bestPos = { x: cx, y: cy };
           }
         }
       }
-      if (bestDist < Infinity) break;
     }
 
-    placed.push({ x: bestPos.x, y: bestPos.y, r });
+    if (!bestPos) {
+      const angleSteps = 60;
+      for (let dist = r; dist < boundary; dist += 4) {
+        for (let a = 0; a < angleSteps; a++) {
+          const angle = (a / angleSteps) * 2 * Math.PI + i * 0.7;
+          const cx = Math.cos(angle) * dist;
+          const cy = Math.sin(angle) * dist;
+
+          if (Math.sqrt(cx * cx + cy * cy) + r > boundary) continue;
+
+          let collides = false;
+          for (const q of placed) {
+            const dx = cx - q.x;
+            const dy = cy - q.y;
+            const minD = r + q.r + PADDING;
+            if (dx * dx + dy * dy < minD * minD - 0.1) {
+              collides = true;
+              break;
+            }
+          }
+
+          if (!collides) {
+            bestPos = { x: cx, y: cy };
+            break;
+          }
+        }
+        if (bestPos) break;
+      }
+    }
+
+    placed.push({ x: bestPos?.x ?? 0, y: bestPos?.y ?? 0, r });
   }
 
   return placed.map(p => ({ x: p.x, y: p.y }));
