@@ -283,6 +283,97 @@ export default function ProsCons() {
           <h1 className="text-4xl sm:text-5xl font-bold uppercase tracking-tighter" data-testid="text-topic">{topic}</h1>
         </div>
 
+        <div className="flex gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold uppercase tracking-wider text-green-500 border-b-2 border-green-500 pb-2">Pros</h2>
+                <div className="flex gap-2">
+                  <Input
+                    value={newPro}
+                    onChange={e => setNewPro(e.target.value)}
+                    placeholder="Add a pro..."
+                    className="rounded-none border-2 border-muted h-12"
+                    onKeyDown={e => e.key === "Enter" && addPro()}
+                    data-testid="input-add-pro"
+                  />
+                  <Button onClick={addPro} className="rounded-none border-2 border-foreground h-12 px-4" data-testid="button-add-pro">
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                </div>
+                <BarChart
+                  items={pros}
+                  color="green"
+                  globalMax={globalMaxWeight}
+                  selectedId={selectedBarId}
+                  onSelect={(id) => selectBar(id, "pro")}
+                  onRemove={removePro}
+                  emptyText="No pros yet"
+                />
+              </div>
+
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold uppercase tracking-wider text-red-500 border-b-2 border-red-500 pb-2">Cons</h2>
+                <div className="flex gap-2">
+                  <Input
+                    value={newCon}
+                    onChange={e => setNewCon(e.target.value)}
+                    placeholder="Add a con..."
+                    className="rounded-none border-2 border-muted h-12"
+                    onKeyDown={e => e.key === "Enter" && addCon()}
+                    data-testid="input-add-con"
+                  />
+                  <Button onClick={addCon} className="rounded-none border-2 border-foreground h-12 px-4" data-testid="button-add-con">
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                </div>
+                <BarChart
+                  items={cons}
+                  color="red"
+                  globalMax={globalMaxWeight}
+                  selectedId={selectedBarId}
+                  onSelect={(id) => selectBar(id, "con")}
+                  onRemove={removeCon}
+                  emptyText="No cons yet"
+                />
+              </div>
+            </div>
+          </div>
+
+          {(pros.length > 0 || cons.length > 0) && (
+            <div className="flex flex-col items-center justify-center gap-3 border-2 border-muted bg-muted/20 px-3 py-4 self-start sticky top-4">
+              <button
+                onClick={increaseSelected}
+                disabled={!selectedItem || selectedItem.weight >= 20}
+                className="w-10 h-10 rounded-none border-2 border-foreground flex items-center justify-center font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground hover:text-background transition-colors"
+                data-testid="button-global-increase"
+              >
+                <Plus className="h-5 w-5" />
+              </button>
+              <div className="text-center min-w-[48px]">
+                {selectedItem ? (
+                  <div>
+                    <p className={`text-[9px] font-bold uppercase tracking-widest leading-tight ${selectedBarSide === "pro" ? "text-green-500" : "text-red-500"}`}>
+                      {selectedItem.label}
+                    </p>
+                    <p className="text-xl font-bold">{selectedItem.weight}</p>
+                  </div>
+                ) : (
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-widest leading-tight">Tap a<br/>bar</p>
+                )}
+              </div>
+              <button
+                onClick={decreaseSelected}
+                disabled={!selectedItem || selectedItem.weight <= 1}
+                className="w-10 h-10 rounded-none border-2 border-foreground flex items-center justify-center font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground hover:text-background transition-colors"
+                data-testid="button-global-decrease"
+              >
+                <Minus className="h-5 w-5" />
+              </button>
+            </div>
+          )}
+        </div>
+
         <AnimatePresence>
           {showSuggestions && suggestions.length > 0 && (
             <motion.div
@@ -324,93 +415,6 @@ export default function ProsCons() {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {(pros.length > 0 || cons.length > 0) && (
-          <div className="flex items-center justify-center gap-4 py-4 border-2 border-muted bg-muted/20">
-            <button
-              onClick={decreaseSelected}
-              disabled={!selectedItem || selectedItem.weight <= 1}
-              className="w-10 h-10 rounded-none border-2 border-foreground flex items-center justify-center font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground hover:text-background transition-colors"
-              data-testid="button-global-decrease"
-            >
-              <Minus className="h-5 w-5" />
-            </button>
-            <div className="text-center min-w-[120px]">
-              {selectedItem ? (
-                <div>
-                  <p className={`text-xs font-bold uppercase tracking-widest ${selectedBarSide === "pro" ? "text-green-500" : "text-red-500"}`}>
-                    {selectedItem.label}
-                  </p>
-                  <p className="text-2xl font-bold">{selectedItem.weight}</p>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground uppercase tracking-widest">Tap a bar</p>
-              )}
-            </div>
-            <button
-              onClick={increaseSelected}
-              disabled={!selectedItem || selectedItem.weight >= 20}
-              className="w-10 h-10 rounded-none border-2 border-foreground flex items-center justify-center font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground hover:text-background transition-colors"
-              data-testid="button-global-increase"
-            >
-              <Plus className="h-5 w-5" />
-            </button>
-          </div>
-        )}
-
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold uppercase tracking-wider text-green-500 border-b-2 border-green-500 pb-2">Pros</h2>
-            <div className="flex gap-2">
-              <Input
-                value={newPro}
-                onChange={e => setNewPro(e.target.value)}
-                placeholder="Add a pro..."
-                className="rounded-none border-2 border-muted h-12"
-                onKeyDown={e => e.key === "Enter" && addPro()}
-                data-testid="input-add-pro"
-              />
-              <Button onClick={addPro} className="rounded-none border-2 border-foreground h-12 px-4" data-testid="button-add-pro">
-                <Plus className="h-5 w-5" />
-              </Button>
-            </div>
-            <BarChart
-              items={pros}
-              color="green"
-              globalMax={globalMaxWeight}
-              selectedId={selectedBarId}
-              onSelect={(id) => selectBar(id, "pro")}
-              onRemove={removePro}
-              emptyText="No pros yet"
-            />
-          </div>
-
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold uppercase tracking-wider text-red-500 border-b-2 border-red-500 pb-2">Cons</h2>
-            <div className="flex gap-2">
-              <Input
-                value={newCon}
-                onChange={e => setNewCon(e.target.value)}
-                placeholder="Add a con..."
-                className="rounded-none border-2 border-muted h-12"
-                onKeyDown={e => e.key === "Enter" && addCon()}
-                data-testid="input-add-con"
-              />
-              <Button onClick={addCon} className="rounded-none border-2 border-foreground h-12 px-4" data-testid="button-add-con">
-                <Plus className="h-5 w-5" />
-              </Button>
-            </div>
-            <BarChart
-              items={cons}
-              color="red"
-              globalMax={globalMaxWeight}
-              selectedId={selectedBarId}
-              onSelect={(id) => selectBar(id, "con")}
-              onRemove={removeCon}
-              emptyText="No cons yet"
-            />
-          </div>
-        </div>
 
         {(pros.length > 0 || cons.length > 0) && (
           <motion.div
