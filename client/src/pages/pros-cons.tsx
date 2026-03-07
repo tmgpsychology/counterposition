@@ -113,26 +113,55 @@ function generateSuggestions(topic: string, existingPros: CircleItem[], existing
   return all.filter(s => !existingLabels.some(label => label.includes(s.text.toLowerCase().slice(0, 15))));
 }
 
-function getBubblePositions(count: number): Array<{ x: number; y: number }> {
-  const positions: Array<{ x: number; y: number }> = [];
-  const angleStep = (2 * Math.PI) / Math.max(count, 1);
-  
-  for (let i = 0; i < count; i++) {
-    const ring = Math.floor(i / 6);
-    const indexInRing = i % 6;
-    const ringCount = Math.min(6, count - ring * 6);
-    const angle = (angleStep * i) + (ring * 0.5);
-    const radius = 20 + ring * 30;
-    
-    const jitterX = (Math.sin(i * 7.3) * 10);
-    const jitterY = (Math.cos(i * 5.1) * 10);
-    
-    positions.push({
-      x: Math.cos(angle) * radius + jitterX,
-      y: Math.sin(angle) * radius + jitterY,
-    });
+function packCircles(items: CircleItem[]): Array<{ x: number; y: number }> {
+  if (items.length === 0) return [];
+  if (items.length === 1) return [{ x: 0, y: 0 }];
+
+  const padding = 6;
+  const placed: Array<{ x: number; y: number; r: number }> = [];
+
+  placed.push({ x: 0, y: 0, r: items[0].radius });
+
+  for (let i = 1; i < items.length; i++) {
+    const r = items[i].radius;
+    let bestPos = { x: 0, y: 0 };
+    let bestDist = Infinity;
+
+    const angleSteps = 36;
+    let found = false;
+
+    for (let dist = 0; dist < 500 && !found; dist += 3) {
+      for (let a = 0; a < angleSteps; a++) {
+        const angle = (a / angleSteps) * 2 * Math.PI + (i * 0.7);
+        const cx = Math.cos(angle) * dist;
+        const cy = Math.sin(angle) * dist;
+
+        let collides = false;
+        for (const p of placed) {
+          const dx = cx - p.x;
+          const dy = cy - p.y;
+          const minDist = r + p.r + padding;
+          if (dx * dx + dy * dy < minDist * minDist) {
+            collides = true;
+            break;
+          }
+        }
+
+        if (!collides) {
+          const distFromCenter = cx * cx + cy * cy;
+          if (distFromCenter < bestDist) {
+            bestDist = distFromCenter;
+            bestPos = { x: cx, y: cy };
+            found = true;
+          }
+        }
+      }
+    }
+
+    placed.push({ x: bestPos.x, y: bestPos.y, r });
   }
-  return positions;
+
+  return placed.map(p => ({ x: p.x, y: p.y }));
 }
 
 export default function ProsCons() {
@@ -222,8 +251,8 @@ export default function ProsCons() {
     return generateSuggestions(topic, pros, cons).filter(s => !dismissedSuggestions.has(s.text));
   }, [topic, pros, cons, dismissedSuggestions]);
 
-  const proPositions = useMemo(() => getBubblePositions(pros.length), [pros.length]);
-  const conPositions = useMemo(() => getBubblePositions(cons.length), [cons.length]);
+  const proPositions = useMemo(() => packCircles(pros), [pros]);
+  const conPositions = useMemo(() => packCircles(cons), [cons]);
 
   if (!topicSet) {
     return (
