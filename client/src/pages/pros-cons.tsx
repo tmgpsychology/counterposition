@@ -427,23 +427,23 @@ function BarChart({
   const btnBg = color === "green" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600";
 
   return (
-    <div className="border-2 border-muted p-4">
-      <div className="flex items-end gap-3 justify-center" style={{ minHeight: MAX_BAR_HEIGHT + 80 }}>
+    <div className="border-2 border-muted p-4 overflow-x-auto">
+      <div className="flex gap-3 justify-center">
         <AnimatePresence>
           {items.map((item) => {
             const heightPercent = item.weight / globalMax;
-            const barHeight = Math.max(20, heightPercent * MAX_BAR_HEIGHT);
+            const barHeight = Math.max(16, heightPercent * MAX_BAR_HEIGHT);
             return (
               <motion.div
                 key={item.id}
-                initial={{ opacity: 0, scaleY: 0 }}
-                animate={{ opacity: 1, scaleY: 1 }}
-                exit={{ opacity: 0, scaleY: 0 }}
-                style={{ originY: 1 }}
-                className="flex flex-col items-center gap-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center flex-shrink-0"
+                style={{ width: 64 }}
                 data-testid={`bar-${color}-${item.id}`}
               >
-                <div className="flex gap-1 mb-1">
+                <div className="flex gap-1 mb-2">
                   <button
                     onClick={() => onDecrease(item.id)}
                     className={`w-6 h-6 rounded-full flex items-center justify-center ${btnBg} text-white transition-colors`}
@@ -460,13 +460,15 @@ function BarChart({
                     <Plus className="h-3 w-3" />
                   </button>
                 </div>
-                <motion.div
-                  className={`w-12 sm:w-16 ${barColor}/80 border-2 ${barBorder} relative`}
-                  animate={{ height: barHeight }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                />
-                <div className="flex flex-col items-center gap-1 mt-1">
-                  <p className={`text-[10px] font-bold uppercase tracking-wider ${textColor} text-center leading-tight max-w-[70px]`}>
+                <div className="flex flex-col justify-end" style={{ height: MAX_BAR_HEIGHT }}>
+                  <motion.div
+                    className={`w-12 ${barColor}/80 border-2 ${barBorder}`}
+                    animate={{ height: barHeight }}
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  />
+                </div>
+                <div className="flex flex-col items-center gap-1 mt-2">
+                  <p className={`text-[10px] font-bold uppercase tracking-wider ${textColor} text-center leading-tight max-w-[64px]`}>
                     {item.label}
                   </p>
                   <button
