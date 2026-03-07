@@ -257,17 +257,6 @@ export default function ProsCons() {
             </button>
           </Link>
           <div className="flex gap-3">
-            {suggestions.length > 0 && (
-              <Button
-                onClick={() => setShowSuggestions(!showSuggestions)}
-                variant="outline"
-                className={`rounded-none border-2 border-foreground uppercase tracking-wider text-sm ${showSuggestions ? 'bg-foreground text-background' : ''}`}
-                data-testid="button-toggle-suggestions"
-              >
-                <Lightbulb className="h-4 w-4 mr-2" />
-                Have you considered...
-              </Button>
-            )}
             <Button
               onClick={() => { setTopicSet(false); setTopic(""); setPros([]); setCons([]); setDismissedSuggestions(new Set()); setShowSuggestions(false); }}
               variant="outline"
@@ -374,47 +363,51 @@ export default function ProsCons() {
           )}
         </div>
 
-        <AnimatePresence>
-          {showSuggestions && suggestions.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden"
+        {suggestions.length > 0 && (
+          <div className="space-y-4">
+            <Button
+              onClick={() => setShowSuggestions(!showSuggestions)}
+              variant="outline"
+              className={`rounded-md border-2 border-foreground uppercase tracking-wider text-sm w-full ${showSuggestions ? 'bg-foreground text-background' : ''}`}
+              data-testid="button-toggle-suggestions"
             >
-              <div className="border-2 border-muted rounded-lg p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold uppercase tracking-wider flex items-center gap-2">
-                    <Lightbulb className="h-5 w-5" />
-                    Have you considered...
-                  </h3>
-                  <button onClick={() => setShowSuggestions(false)} className="text-muted-foreground hover:text-foreground">
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {suggestions.slice(0, 8).map((suggestion) => (
-                    <motion.button
-                      key={suggestion.text}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className={`px-4 py-2 border-2 rounded-md text-sm font-medium uppercase tracking-wider transition-all hover:scale-105 ${
-                        suggestion.side === "pro"
-                          ? "border-[#333D79]/50 text-[#333D79] hover:bg-[#333D79]/10"
-                          : "border-[#d4c0c3] text-[#c4868a] hover:bg-[#F5E6E8]/30"
-                      }`}
-                      onClick={() => addSuggestion(suggestion)}
-                      data-testid={`button-suggestion-${suggestion.text.slice(0, 20)}`}
-                    >
-                      <span className="mr-2">{suggestion.side === "pro" ? "+" : "−"}</span>
-                      {suggestion.text}
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <Lightbulb className="h-4 w-4 mr-2" />
+              Have you considered...
+            </Button>
+            <AnimatePresence>
+              {showSuggestions && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="border-2 border-muted rounded-lg p-6 space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      {suggestions.slice(0, 8).map((suggestion) => (
+                        <motion.button
+                          key={suggestion.text}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className={`px-4 py-2 border-2 rounded-md text-sm font-medium uppercase tracking-wider transition-all hover:scale-105 ${
+                            suggestion.side === "pro"
+                              ? "border-[#333D79]/50 text-[#333D79] hover:bg-[#333D79]/10"
+                              : "border-[#d4c0c3] text-[#c4868a] hover:bg-[#F5E6E8]/30"
+                          }`}
+                          onClick={() => addSuggestion(suggestion)}
+                          data-testid={`button-suggestion-${suggestion.text.slice(0, 20)}`}
+                        >
+                          <span className="mr-2">{suggestion.side === "pro" ? "+" : "−"}</span>
+                          {suggestion.text}
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         {(pros.length > 0 || cons.length > 0) && (
           <motion.div
