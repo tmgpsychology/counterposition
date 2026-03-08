@@ -477,9 +477,9 @@ function BarChart({
   const isPro = color === "pro";
   const barStyle = isPro
     ? { backgroundColor: "#333D79", borderColor: "#333D79" }
-    : { backgroundColor: "#F5E6E8", borderColor: "#d4c0c3" };
-  const ringClass = isPro ? "ring-[#333D79]" : "ring-[#d4c0c3]";
-  const barTextClass = isPro ? "text-white" : "text-[#333D79]";
+    : { backgroundColor: "#c4868a", borderColor: "#b0747a" };
+  const ringClass = isPro ? "ring-[#333D79]" : "ring-[#c4868a]";
+  const barTextClass = isPro ? "text-white" : "text-white";
 
   return (
     <div className="border-2 border-muted rounded-lg p-4">
