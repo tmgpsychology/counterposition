@@ -417,25 +417,29 @@ export default function ProsCons() {
           >
             <h2 className="text-3xl font-bold uppercase tracking-tight text-center mb-8">The Verdict</h2>
             <div className="grid grid-cols-2 gap-8">
-              <div className="flex flex-col items-center gap-4">
-                <div
-                  className="rounded-full bg-[#333D79]/20 border-4 border-[#333D79] flex items-center justify-center transition-all duration-500"
-                  style={{ width: proSummaryRadius * 2 + 20, height: proSummaryRadius * 2 + 20 }}
-                  data-testid="circle-summary-pros"
-                >
-                  <span className="text-2xl font-bold text-[#333D79]">{proPercent}%</span>
+              <div className="flex flex-col items-center">
+                <div className="flex items-center justify-center" style={{ height: maxSummaryRadius * 2 + 20 }}>
+                  <div
+                    className="rounded-full bg-[#333D79]/20 border-4 border-[#333D79] flex items-center justify-center transition-all duration-500"
+                    style={{ width: proSummaryRadius * 2 + 20, height: proSummaryRadius * 2 + 20 }}
+                    data-testid="circle-summary-pros"
+                  >
+                    <span className="text-2xl font-bold text-[#333D79]">{proPercent}%</span>
+                  </div>
                 </div>
-                <p className="text-sm font-bold uppercase tracking-widest text-[#333D79]">Pros</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-[#333D79] mt-4">Pros</p>
               </div>
-              <div className="flex flex-col items-center gap-4">
-                <div
-                  className="rounded-full border-4 flex items-center justify-center transition-all duration-500"
-                  style={{ width: conSummaryRadius * 2 + 20, height: conSummaryRadius * 2 + 20, backgroundColor: "rgba(245,230,232,0.3)", borderColor: "#d4c0c3" }}
-                  data-testid="circle-summary-cons"
-                >
-                  <span className="text-2xl font-bold text-[#c4868a]">{conPercent}%</span>
+              <div className="flex flex-col items-center">
+                <div className="flex items-center justify-center" style={{ height: maxSummaryRadius * 2 + 20 }}>
+                  <div
+                    className="rounded-full border-4 flex items-center justify-center transition-all duration-500"
+                    style={{ width: conSummaryRadius * 2 + 20, height: conSummaryRadius * 2 + 20, backgroundColor: "rgba(245,230,232,0.3)", borderColor: "#d4c0c3" }}
+                    data-testid="circle-summary-cons"
+                  >
+                    <span className="text-2xl font-bold text-[#c4868a]">{conPercent}%</span>
+                  </div>
                 </div>
-                <p className="text-sm font-bold uppercase tracking-widest text-[#c4868a]">Cons</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-[#c4868a] mt-4">Cons</p>
               </div>
             </div>
           </motion.div>
