@@ -59,10 +59,8 @@ export default function Unthread() {
   };
 
   const moveToTrade = () => {
-    if (chain.length > 0 && !tradeCost) {
+    if (chain.length > 0) {
       setTradeCost(chain[0].action);
-    }
-    if (chain.length > 0 && !tradeGain) {
       setTradeGain(chain[chain.length - 1].reward);
     }
     setPhase("trade");
@@ -389,7 +387,7 @@ export default function Unthread() {
               >
                 <div className="border-2 border-foreground rounded-md p-6 bg-foreground/5 text-center space-y-4">
                   <p className="text-lg leading-relaxed">
-                    I am paying the cost of <strong className="text-[#c4868a]">{tradeCost}</strong> for
+                    I'm choosing to incur the cost of <strong className="text-[#c4868a]">{tradeCost}</strong> for
                     the gain of <strong className="text-[#333D79]">{tradeGain}</strong>.
                   </p>
                   <p className="text-xl font-bold uppercase tracking-wider">
