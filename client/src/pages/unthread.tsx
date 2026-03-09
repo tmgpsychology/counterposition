@@ -135,7 +135,7 @@ export default function Unthread() {
   const allReasons = chain.flatMap(link => link.reasons.filter(r => r.text.trim()).map(r => r.text));
   const lastReward = allReasons.length > 0 ? allReasons[allReasons.length - 1] : "";
   const chainComplete = chain.length > 0 && chain.every(link => link.reasons.some(r => r.text.trim()));
-  const tradeComplete = tradeCost.trim() && tradeGain.trim() && tradeVerdict !== null;
+  const tradeComplete = chainComplete && tradeVerdict !== null;
 
   if (!questionSet) {
     return (
@@ -363,109 +363,102 @@ export default function Unthread() {
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold uppercase tracking-tight">The Choice I'm Making</h2>
               <p className="text-sm text-muted-foreground">
-                Every decision is a trade. You pay a cost to receive a gain. Make it explicit.
+                Here's the full thread of your reasoning, from what you're doing to why.
               </p>
             </div>
 
-            <div className="grid sm:grid-cols-[1fr_auto_1fr] gap-4 items-start">
-              <div className="border-2 border-[#c4868a] rounded-md p-5 space-y-3">
-                <p className="text-xs uppercase tracking-widest font-bold text-[#c4868a]">The Cost</p>
-                <p className="text-xs text-muted-foreground">What am I paying?</p>
-                <Input
-                  value={tradeCost}
-                  onChange={e => setTradeCost(e.target.value)}
-                  placeholder="e.g., Stress, exhaustion, missed time with family"
-                  className="rounded-md border-2 border-[#c4868a]/30 h-12 text-lg"
-                  data-testid="input-trade-cost"
-                />
+            <div className="space-y-0">
+              <div className="border-2 border-[#c4868a] rounded-md p-4 bg-[#c4868a]/5">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">What I'm doing</p>
+                <p className="font-bold text-lg text-[#c4868a]" data-testid="text-trade-cost">{question}</p>
               </div>
 
-              <div className="flex items-center justify-center pt-8 sm:pt-12">
-                <span className="text-2xl font-bold text-muted-foreground">for</span>
-              </div>
+              {chain.map((link, index) => (
+                <div key={link.id}>
+                  <div className="flex justify-center py-1">
+                    <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="border-2 border-muted rounded-md p-3 bg-muted/5">
+                    <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                      {index === 0 ? "Because" : "And because"}
+                    </p>
+                    <p className="font-medium text-sm">
+                      {link.reasons.filter(r => r.text.trim()).map(r => r.text).join(", ") || "..."}
+                    </p>
+                  </div>
+                </div>
+              ))}
 
-              <div className="border-2 border-[#333D79] rounded-md p-5 space-y-3">
-                <p className="text-xs uppercase tracking-widest font-bold text-[#333D79]">The Gain</p>
-                <p className="text-xs text-muted-foreground">What am I getting?</p>
-                <Input
-                  value={tradeGain}
-                  onChange={e => setTradeGain(e.target.value)}
-                  placeholder="e.g., Financial security, sense of purpose"
-                  className="rounded-md border-2 border-[#333D79]/30 h-12 text-lg"
-                  data-testid="input-trade-gain"
-                />
+              <div className="flex justify-center py-1">
+                <ArrowDown className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="border-2 border-[#333D79] rounded-md p-4 bg-[#333D79]/5">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">What I'm getting</p>
+                <p className="font-bold text-lg text-[#333D79]" data-testid="text-trade-gain">{tradeGain}</p>
               </div>
             </div>
 
-            {tradeCost.trim() && tradeGain.trim() && (
+            <div className="border-2 border-foreground rounded-md p-6 bg-foreground/5 text-center space-y-4">
+              <p className="text-lg leading-relaxed">
+                Phrased as a choice, I'm choosing to pay the cost of <strong className="text-[#c4868a]">{tradeCost}</strong> for
+                the gain of <strong className="text-[#333D79]">{tradeGain}</strong>.
+              </p>
+              <p className="text-xl font-bold uppercase tracking-wider">
+                Is this trade worth it?
+              </p>
+              <div className="flex justify-center gap-3 pt-2 flex-wrap">
+                {(["yes", "unsure", "no"] as const).map(option => (
+                  <button
+                    key={option}
+                    onClick={() => setTradeVerdict(option)}
+                    className={`px-6 py-3 rounded-md border-2 font-bold uppercase tracking-wider text-sm transition-all ${
+                      tradeVerdict === option
+                        ? option === "yes" ? "bg-[#333D79] text-white border-[#333D79]"
+                          : option === "no" ? "bg-[#c4868a] text-white border-[#c4868a]"
+                          : "bg-foreground text-background border-foreground"
+                        : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"
+                    }`}
+                    data-testid={`button-verdict-${option}`}
+                  >
+                    {option === "yes" ? "Yes, worth it" : option === "no" ? "No, not worth it" : "I'm not sure"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {tradeVerdict && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="space-y-6"
+                className="space-y-4"
               >
-                <div className="border-2 border-foreground rounded-md p-6 bg-foreground/5 text-center space-y-4">
-                  <p className="text-lg leading-relaxed">
-                    I'm choosing to incur the cost of <strong className="text-[#c4868a]">{tradeCost}</strong> for
-                    the gain of <strong className="text-[#333D79]">{tradeGain}</strong>.
-                  </p>
-                  <p className="text-xl font-bold uppercase tracking-wider">
-                    Is this trade worth it?
-                  </p>
-                  <div className="flex justify-center gap-3 pt-2">
-                    {(["yes", "unsure", "no"] as const).map(option => (
-                      <button
-                        key={option}
-                        onClick={() => setTradeVerdict(option)}
-                        className={`px-6 py-3 rounded-md border-2 font-bold uppercase tracking-wider text-sm transition-all ${
-                          tradeVerdict === option
-                            ? option === "yes" ? "bg-[#333D79] text-white border-[#333D79]"
-                              : option === "no" ? "bg-[#c4868a] text-white border-[#c4868a]"
-                              : "bg-foreground text-background border-foreground"
-                            : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"
-                        }`}
-                        data-testid={`button-verdict-${option}`}
-                      >
-                        {option === "yes" ? "Yes, worth it" : option === "no" ? "No, not worth it" : "I'm not sure"}
-                      </button>
-                    ))}
-                  </div>
+                <div>
+                  <label className="text-xs uppercase tracking-widest text-muted-foreground mb-2 block">
+                    {tradeVerdict === "yes"
+                      ? "What makes this trade worth it for you?"
+                      : tradeVerdict === "no"
+                      ? "What would need to change to make it worth it?"
+                      : "What would help you decide?"}
+                  </label>
+                  <Textarea
+                    value={tradeReflection}
+                    onChange={e => setTradeReflection(e.target.value)}
+                    placeholder="e.g., I'd need to find a less stressful way to earn the same income..."
+                    className="min-h-[100px] rounded-md border-2 border-muted"
+                    data-testid="input-trade-reflection"
+                  />
                 </div>
 
-                {tradeVerdict && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-4"
+                <div className="flex justify-center pt-4">
+                  <Button
+                    onClick={moveToDecompose}
+                    className="rounded-md h-14 px-8 uppercase tracking-widest bg-[#333D79] hover:bg-[#333D79]/90"
+                    data-testid="button-to-decompose"
                   >
-                    <div>
-                      <label className="text-xs uppercase tracking-widest text-muted-foreground mb-2 block">
-                        {tradeVerdict === "yes"
-                          ? "What makes this trade worth it for you?"
-                          : tradeVerdict === "no"
-                          ? "What would need to change to make it worth it?"
-                          : "What would help you decide?"}
-                      </label>
-                      <Textarea
-                        value={tradeReflection}
-                        onChange={e => setTradeReflection(e.target.value)}
-                        placeholder="e.g., I'd need to find a less stressful way to earn the same income..."
-                        className="min-h-[100px] rounded-md border-2 border-muted"
-                        data-testid="input-trade-reflection"
-                      />
-                    </div>
-
-                    <div className="flex justify-center pt-4">
-                      <Button
-                        onClick={moveToDecompose}
-                        className="rounded-md h-14 px-8 uppercase tracking-widest bg-[#333D79] hover:bg-[#333D79]/90"
-                        data-testid="button-to-decompose"
-                      >
-                        <Lightbulb className="h-5 w-5 mr-2" />
-                        {tradeVerdict === "yes" ? "Explore it deeper" : "Find alternatives"}
-                      </Button>
-                    </div>
-                  </motion.div>
-                )}
+                    <Lightbulb className="h-5 w-5 mr-2" />
+                    {tradeVerdict === "yes" ? "Explore it deeper" : "Find alternatives"}
+                  </Button>
+                </div>
               </motion.div>
             )}
           </motion.div>
