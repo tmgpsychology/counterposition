@@ -23,13 +23,17 @@ interface GoalComponent {
   expanded: boolean;
 }
 
-type Phase = "question" | "chain" | "decompose";
+type Phase = "question" | "chain" | "trade" | "decompose";
 
 export default function Unthread() {
   const [phase, setPhase] = useState<Phase>("question");
   const [question, setQuestion] = useState("");
   const [questionSet, setQuestionSet] = useState(false);
   const [chain, setChain] = useState<ChainLink[]>([]);
+  const [tradeCost, setTradeCost] = useState("");
+  const [tradeGain, setTradeGain] = useState("");
+  const [tradeVerdict, setTradeVerdict] = useState<"yes" | "no" | "unsure" | null>(null);
+  const [tradeReflection, setTradeReflection] = useState("");
   const [components, setComponents] = useState<GoalComponent[]>([]);
   const [newComponentName, setNewComponentName] = useState("");
 
@@ -52,6 +56,16 @@ export default function Unthread() {
 
   const removeChainLink = (id: string) => {
     setChain(prev => prev.filter(link => link.id !== id));
+  };
+
+  const moveToTrade = () => {
+    if (chain.length > 0 && !tradeCost) {
+      setTradeCost(chain[0].action);
+    }
+    if (chain.length > 0 && !tradeGain) {
+      setTradeGain(chain[chain.length - 1].reward);
+    }
+    setPhase("trade");
   };
 
   const moveToDecompose = () => {
@@ -105,6 +119,10 @@ export default function Unthread() {
     setQuestion("");
     setQuestionSet(false);
     setChain([]);
+    setTradeCost("");
+    setTradeGain("");
+    setTradeVerdict(null);
+    setTradeReflection("");
     setComponents([]);
     setNewComponentName("");
     setPhase("question");
@@ -112,6 +130,7 @@ export default function Unthread() {
 
   const lastReward = chain.length > 0 ? chain[chain.length - 1].reward : "";
   const chainComplete = chain.length > 0 && chain.every(link => link.action.trim() && link.reward.trim());
+  const tradeComplete = tradeCost.trim() && tradeGain.trim() && tradeVerdict !== null;
 
   if (!questionSet) {
     return (
@@ -189,7 +208,7 @@ export default function Unthread() {
           </h1>
         </div>
 
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center gap-2 flex-wrap">
           <button
             onClick={() => setPhase("chain")}
             className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md border-2 transition-all ${phase === "chain" ? "bg-[#333D79] text-white border-[#333D79]" : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"}`}
@@ -198,11 +217,18 @@ export default function Unthread() {
             1. The Chain
           </button>
           <button
-            onClick={() => chainComplete && setPhase("decompose")}
-            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md border-2 transition-all ${phase === "decompose" ? "bg-[#333D79] text-white border-[#333D79]" : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"} ${!chainComplete ? "opacity-40 cursor-not-allowed" : ""}`}
+            onClick={() => chainComplete && moveToTrade()}
+            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md border-2 transition-all ${phase === "trade" ? "bg-[#333D79] text-white border-[#333D79]" : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"} ${!chainComplete ? "opacity-40 cursor-not-allowed" : ""}`}
+            data-testid="tab-trade"
+          >
+            2. The Trade
+          </button>
+          <button
+            onClick={() => tradeComplete && setPhase("decompose")}
+            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md border-2 transition-all ${phase === "decompose" ? "bg-[#333D79] text-white border-[#333D79]" : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"} ${!tradeComplete ? "opacity-40 cursor-not-allowed" : ""}`}
             data-testid="tab-decompose"
           >
-            2. Decompose
+            3. Decompose
           </button>
         </div>
 
@@ -299,14 +325,131 @@ export default function Unthread() {
 
                 <div className="flex justify-center pt-4">
                   <Button
-                    onClick={moveToDecompose}
+                    onClick={moveToTrade}
                     className="rounded-md h-14 px-8 uppercase tracking-widest bg-[#333D79] hover:bg-[#333D79]/90"
-                    data-testid="button-decompose"
+                    data-testid="button-to-trade"
                   >
-                    <Lightbulb className="h-5 w-5 mr-2" />
-                    Now decompose it
+                    <ArrowDown className="h-5 w-5 mr-2" />
+                    Name the trade
                   </Button>
                 </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+
+        {phase === "trade" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-6"
+          >
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold uppercase tracking-tight">Name The Trade</h2>
+              <p className="text-sm text-muted-foreground">
+                Every decision is a trade. You pay a cost to receive a gain. Make it explicit.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-[1fr_auto_1fr] gap-4 items-start">
+              <div className="border-2 border-[#c4868a] rounded-md p-5 space-y-3">
+                <p className="text-xs uppercase tracking-widest font-bold text-[#c4868a]">The Cost</p>
+                <p className="text-xs text-muted-foreground">What am I paying?</p>
+                <Input
+                  value={tradeCost}
+                  onChange={e => setTradeCost(e.target.value)}
+                  placeholder="e.g., Stress, time, energy"
+                  className="rounded-md border-2 border-[#c4868a]/30 h-12 text-lg"
+                  data-testid="input-trade-cost"
+                />
+              </div>
+
+              <div className="flex items-center justify-center pt-8 sm:pt-12">
+                <span className="text-2xl font-bold text-muted-foreground">for</span>
+              </div>
+
+              <div className="border-2 border-[#333D79] rounded-md p-5 space-y-3">
+                <p className="text-xs uppercase tracking-widest font-bold text-[#333D79]">The Gain</p>
+                <p className="text-xs text-muted-foreground">What am I getting?</p>
+                <Input
+                  value={tradeGain}
+                  onChange={e => setTradeGain(e.target.value)}
+                  placeholder="e.g., Money, security, purpose"
+                  className="rounded-md border-2 border-[#333D79]/30 h-12 text-lg"
+                  data-testid="input-trade-gain"
+                />
+              </div>
+            </div>
+
+            {tradeCost.trim() && tradeGain.trim() && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-6"
+              >
+                <div className="border-2 border-foreground rounded-md p-6 bg-foreground/5 text-center space-y-4">
+                  <p className="text-lg leading-relaxed">
+                    I am paying the cost of <strong className="text-[#c4868a]">{tradeCost}</strong> for
+                    the gain of <strong className="text-[#333D79]">{tradeGain}</strong>.
+                  </p>
+                  <p className="text-xl font-bold uppercase tracking-wider">
+                    Is this trade worth it?
+                  </p>
+                  <div className="flex justify-center gap-3 pt-2">
+                    {(["yes", "unsure", "no"] as const).map(option => (
+                      <button
+                        key={option}
+                        onClick={() => setTradeVerdict(option)}
+                        className={`px-6 py-3 rounded-md border-2 font-bold uppercase tracking-wider text-sm transition-all ${
+                          tradeVerdict === option
+                            ? option === "yes" ? "bg-[#333D79] text-white border-[#333D79]"
+                              : option === "no" ? "bg-[#c4868a] text-white border-[#c4868a]"
+                              : "bg-foreground text-background border-foreground"
+                            : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"
+                        }`}
+                        data-testid={`button-verdict-${option}`}
+                      >
+                        {option === "yes" ? "Yes, worth it" : option === "no" ? "No, not worth it" : "I'm not sure"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {tradeVerdict && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-4"
+                  >
+                    <div>
+                      <label className="text-xs uppercase tracking-widest text-muted-foreground mb-2 block">
+                        {tradeVerdict === "yes"
+                          ? "What makes this trade worth it for you?"
+                          : tradeVerdict === "no"
+                          ? "What would need to change to make it worth it?"
+                          : "What would help you decide?"}
+                      </label>
+                      <Textarea
+                        value={tradeReflection}
+                        onChange={e => setTradeReflection(e.target.value)}
+                        placeholder="Take a moment to reflect..."
+                        className="min-h-[100px] rounded-md border-2 border-muted"
+                        data-testid="input-trade-reflection"
+                      />
+                    </div>
+
+                    <div className="flex justify-center pt-4">
+                      <Button
+                        onClick={moveToDecompose}
+                        className="rounded-md h-14 px-8 uppercase tracking-widest bg-[#333D79] hover:bg-[#333D79]/90"
+                        data-testid="button-to-decompose"
+                      >
+                        <Lightbulb className="h-5 w-5 mr-2" />
+                        {tradeVerdict === "yes" ? "Explore it deeper" : "Find alternatives"}
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
               </motion.div>
             )}
           </motion.div>
