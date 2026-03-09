@@ -166,7 +166,7 @@ export default function Unthread() {
             <Textarea
               value={question}
               onChange={e => setQuestion(e.target.value)}
-              placeholder="e.g., Why do I put up with the stress of work?"
+              placeholder="e.g., Working long stressful hours"
               className="min-h-[120px] text-lg p-6 rounded-md border-2 border-foreground focus-visible:ring-0 focus-visible:ring-offset-0 bg-card/50"
               data-testid="input-question"
             />
@@ -283,7 +283,11 @@ export default function Unthread() {
                           placeholder={
                             index === 0 && rIdx === 0
                               ? "e.g., It gives me money"
-                              : "Another reason..."
+                              : index === 0
+                              ? "e.g., It provides stability"
+                              : index === 1 && rIdx === 0
+                              ? "e.g., It lets me feel secure"
+                              : "e.g., It gives me status"
                           }
                           className="rounded-md border-2 border-muted h-12 flex-1"
                           data-testid={`input-reason-${reason.id}`}
@@ -375,7 +379,7 @@ export default function Unthread() {
                 <Input
                   value={tradeCost}
                   onChange={e => setTradeCost(e.target.value)}
-                  placeholder="e.g., Stress, time, energy"
+                  placeholder="e.g., Stress, exhaustion, missed time with family"
                   className="rounded-md border-2 border-[#c4868a]/30 h-12 text-lg"
                   data-testid="input-trade-cost"
                 />
@@ -391,7 +395,7 @@ export default function Unthread() {
                 <Input
                   value={tradeGain}
                   onChange={e => setTradeGain(e.target.value)}
-                  placeholder="e.g., Money, security, purpose"
+                  placeholder="e.g., Financial security, sense of purpose"
                   className="rounded-md border-2 border-[#333D79]/30 h-12 text-lg"
                   data-testid="input-trade-gain"
                 />
@@ -449,7 +453,7 @@ export default function Unthread() {
                       <Textarea
                         value={tradeReflection}
                         onChange={e => setTradeReflection(e.target.value)}
-                        placeholder="Take a moment to reflect..."
+                        placeholder="e.g., I'd need to find a less stressful way to earn the same income..."
                         className="min-h-[100px] rounded-md border-2 border-muted"
                         data-testid="input-trade-reflection"
                       />
@@ -549,7 +553,7 @@ export default function Unthread() {
                                 <Input
                                   value={alt.text}
                                   onChange={e => updateLinkAlternative(link.id, alt.id, e.target.value)}
-                                  placeholder="An alternative approach..."
+                                  placeholder="e.g., Freelancing, a different role, passive income..."
                                   className="rounded-md border-2 border-muted h-10 flex-1"
                                   data-testid={`input-alt-${alt.id}`}
                                 />
