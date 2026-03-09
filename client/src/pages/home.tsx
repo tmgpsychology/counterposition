@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Brain, RefreshCcw, ShieldAlert, Zap, BookOpen, Scale } from "lucide-react";
+import { ArrowRight, Brain, RefreshCcw, ShieldAlert, Zap, BookOpen, Scale, Unlink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Textarea } from "@/components/ui/textarea";
@@ -90,6 +90,17 @@ export default function Home() {
                   >
                     <Scale className="mr-3 h-5 w-5" />
                     Weigh It Up
+                  </Button>
+                </Link>
+                <Link href="/unthread">
+                  <Button 
+                    variant="outline"
+                    size="lg" 
+                    className="rounded-none border-2 border-foreground h-16 px-8 text-lg uppercase tracking-wider group hover:bg-foreground hover:text-background transition-all duration-300 w-full"
+                    data-testid="button-unthread"
+                  >
+                    <Unlink className="mr-3 h-5 w-5" />
+                    Unthread
                   </Button>
                 </Link>
               </div>

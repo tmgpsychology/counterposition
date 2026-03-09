@@ -1,6 +1,6 @@
 # Counterposition
 
-A cognitive exercise web app with two tools:
+A cognitive exercise web app with three tools:
 
 ## Pages
 
@@ -16,6 +16,9 @@ Grades use A+ through F- scale (no numerical scores shown).
 ### 2. Weigh It Up (`/weigh-it-up`)
 Visual pros and cons tool. Each pro/con is a circle. Users adjust circle weight with +/- buttons. Circles auto-scale to fit within a fixed container. Contextual suggestions prompt users with relevant considerations based on their topic.
 
+### 3. Unthread (`/unthread`)
+Decision decomposition tool. Users trace a frustration/question back through a reasoning chain (action → reward → deeper goal), then break the final goal into key components and explore alternative paths to achieve each one. Helps users see the full scope of their decisions and discover they may have more options than they think.
+
 ## Tech Stack
 - **Frontend**: React + Vite, Tailwind CSS, Framer Motion, wouter routing, shadcn/ui components
 - **Backend**: Express.js (serves API + static files)
@@ -27,6 +30,7 @@ Visual pros and cons tool. Each pro/con is a circle. Users adjust circle weight 
 ## Key Files
 - `client/src/pages/home.tsx` — Main counterposition exercise flow
 - `client/src/pages/pros-cons.tsx` — Weigh It Up page
+- `client/src/pages/unthread.tsx` — Unthread decision decomposition page
 - `client/src/lib/scoring.ts` — Scoring engine with letter grades
 - `client/index.html` — SEO meta tags, Google Search Console verification
 - `server/routes.ts` — Sitemap and robots.txt routes
