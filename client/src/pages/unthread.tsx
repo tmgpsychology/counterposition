@@ -12,8 +12,7 @@ function generateId() {
 
 interface ChainLink {
   id: string;
-  action: string;
-  reward: string;
+  reasons: { id: string; text: string }[];
 }
 
 interface LinkAlternatives {
@@ -39,26 +38,48 @@ export default function Unthread() {
     setQuestionSet(true);
     setPhase("chain");
     if (chain.length === 0) {
-      setChain([{ id: generateId(), action: "", reward: "" }]);
+      setChain([{ id: generateId(), reasons: [{ id: generateId(), text: "" }] }]);
     }
   };
 
   const addChainLink = () => {
-    setChain(prev => [...prev, { id: generateId(), action: "", reward: "" }]);
-  };
-
-  const updateChainLink = (id: string, field: "action" | "reward", value: string) => {
-    setChain(prev => prev.map(link => link.id === id ? { ...link, [field]: value } : link));
+    setChain(prev => [...prev, { id: generateId(), reasons: [{ id: generateId(), text: "" }] }]);
   };
 
   const removeChainLink = (id: string) => {
     setChain(prev => prev.filter(link => link.id !== id));
   };
 
+  const addReason = (linkId: string) => {
+    setChain(prev => prev.map(link =>
+      link.id === linkId
+        ? { ...link, reasons: [...link.reasons, { id: generateId(), text: "" }] }
+        : link
+    ));
+  };
+
+  const updateReason = (linkId: string, reasonId: string, text: string) => {
+    setChain(prev => prev.map(link =>
+      link.id === linkId
+        ? { ...link, reasons: link.reasons.map(r => r.id === reasonId ? { ...r, text } : r) }
+        : link
+    ));
+  };
+
+  const removeReason = (linkId: string, reasonId: string) => {
+    setChain(prev => prev.map(link =>
+      link.id === linkId
+        ? { ...link, reasons: link.reasons.filter(r => r.id !== reasonId) }
+        : link
+    ));
+  };
+
   const moveToTrade = () => {
     if (chain.length > 0) {
-      setTradeCost(chain[0].action);
-      setTradeGain(chain[chain.length - 1].reward);
+      setTradeCost(question);
+      const lastLink = chain[chain.length - 1];
+      const lastReasons = lastLink.reasons.filter(r => r.text.trim()).map(r => r.text);
+      setTradeGain(lastReasons.join(", ") || "");
     }
     setPhase("trade");
   };
@@ -111,8 +132,9 @@ export default function Unthread() {
     setPhase("question");
   };
 
-  const lastReward = chain.length > 0 ? chain[chain.length - 1].reward : "";
-  const chainComplete = chain.length > 0 && chain.every(link => link.action.trim() && link.reward.trim());
+  const allReasons = chain.flatMap(link => link.reasons.filter(r => r.text.trim()).map(r => r.text));
+  const lastReward = allReasons.length > 0 ? allReasons[allReasons.length - 1] : "";
+  const chainComplete = chain.length > 0 && chain.every(link => link.reasons.some(r => r.text.trim()));
   const tradeComplete = tradeCost.trim() && tradeGain.trim() && tradeVerdict !== null;
 
   if (!questionSet) {
@@ -222,7 +244,7 @@ export default function Unthread() {
             className="space-y-2"
           >
             <div className="border-2 border-[#333D79] rounded-md p-4 bg-[#333D79]/5">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Starting point</p>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">I am currently doing this</p>
               <p className="font-bold text-lg" data-testid="text-starting-point">{question}</p>
             </div>
 
@@ -238,7 +260,7 @@ export default function Unthread() {
                     <ArrowDown className="h-5 w-5 text-muted-foreground" />
                   </div>
 
-                  <div className="border-2 border-muted rounded-md p-4 space-y-4 relative group">
+                  <div className="border-2 border-muted rounded-md p-4 space-y-3 relative group">
                     {chain.length > 1 && (
                       <button
                         onClick={() => removeChainLink(link.id)}
@@ -249,31 +271,43 @@ export default function Unthread() {
                       </button>
                     )}
 
-                    <div>
-                      <label className="text-xs uppercase tracking-widest text-muted-foreground mb-1 block">
-                        {index === 0 ? "I do this / this happens..." : "Which leads to..."}
-                      </label>
-                      <Input
-                        value={link.action}
-                        onChange={e => updateChainLink(link.id, "action", e.target.value)}
-                        placeholder={index === 0 ? "e.g., I work long stressful hours" : "e.g., I build my career"}
-                        className="rounded-md border-2 border-muted h-12"
-                        data-testid={`input-action-${link.id}`}
-                      />
-                    </div>
+                    <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                      {index === 0 ? "Because..." : "And because..."}
+                    </p>
 
-                    <div>
-                      <label className="text-xs uppercase tracking-widest text-muted-foreground mb-1 block">
-                        Because it gives me...
-                      </label>
-                      <Input
-                        value={link.reward}
-                        onChange={e => updateChainLink(link.id, "reward", e.target.value)}
-                        placeholder="e.g., Money, stability, purpose"
-                        className="rounded-md border-2 border-muted h-12"
-                        data-testid={`input-reward-${link.id}`}
-                      />
-                    </div>
+                    {link.reasons.map((reason, rIdx) => (
+                      <div key={reason.id} className="flex gap-2 items-center">
+                        <Input
+                          value={reason.text}
+                          onChange={e => updateReason(link.id, reason.id, e.target.value)}
+                          placeholder={
+                            index === 0 && rIdx === 0
+                              ? "e.g., It gives me money"
+                              : "Another reason..."
+                          }
+                          className="rounded-md border-2 border-muted h-12 flex-1"
+                          data-testid={`input-reason-${reason.id}`}
+                        />
+                        {link.reasons.length > 1 && (
+                          <button
+                            onClick={() => removeReason(link.id, reason.id)}
+                            className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
+                            data-testid={`button-remove-reason-${reason.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+
+                    <button
+                      onClick={() => addReason(link.id)}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      data-testid={`button-add-reason-${link.id}`}
+                    >
+                      <Plus className="h-3 w-3" />
+                      Add another reason
+                    </button>
                   </div>
                 </motion.div>
               ))}
@@ -453,8 +487,10 @@ export default function Unthread() {
 
             <div className="space-y-3">
               {chain.map((link, index) => {
+                const reasons = link.reasons.filter(r => r.text.trim());
                 const alts = linkAlternatives[link.id] || [];
                 const isExpanded = expandedLinks.has(link.id);
+                const reasonsSummary = reasons.map(r => r.text).join(", ");
                 return (
                   <motion.div
                     key={link.id}
@@ -473,11 +509,9 @@ export default function Unthread() {
                           {index + 1}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="font-bold text-sm truncate" data-testid={`text-link-action-${link.id}`}>
-                            {link.action}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            → {link.reward}
+                          <p className="text-xs uppercase tracking-widest text-muted-foreground">Because</p>
+                          <p className="font-bold text-sm truncate" data-testid={`text-link-reasons-${link.id}`}>
+                            {reasonsSummary || "..."}
                           </p>
                         </div>
                         {alts.filter(a => a.text.trim()).length > 0 && (
@@ -502,11 +536,10 @@ export default function Unthread() {
                           <div className="p-4 pt-0 space-y-3 border-t border-muted">
                             <div className="bg-muted/20 rounded-md p-3 mt-3">
                               <p className="text-xs text-muted-foreground">
-                                You're doing <strong className="text-foreground">{link.action}</strong> to
-                                get <strong className="text-foreground">{link.reward}</strong>.
+                                You said this is because: <strong className="text-foreground">{reasonsSummary || "..."}</strong>
                               </p>
                               <p className="text-xs text-muted-foreground mt-1">
-                                What else could give you the same result?
+                                What alternatives could replace this step?
                               </p>
                             </div>
 
@@ -556,21 +589,24 @@ export default function Unthread() {
                 <h2 className="text-3xl font-bold uppercase tracking-tight text-center">The Insight</h2>
                 <div className="border-2 border-muted rounded-md p-6 space-y-4">
                   <p className="text-muted-foreground leading-relaxed">
-                    You traced a thread from <strong className="text-foreground">{chain[0]?.action || "your frustration"}</strong> to
-                    what you really want: <strong className="text-foreground">{lastReward}</strong>. Here's where
+                    You traced a thread from <strong className="text-foreground">{question}</strong> through
+                    {chain.length} layer{chain.length !== 1 ? "s" : ""} of reasoning. Here's where
                     the thread could be rewoven:
                   </p>
                   <div className="space-y-3">
-                    {chain.filter(link => (linkAlternatives[link.id] || []).some(a => a.text.trim())).map(link => (
-                      <div key={link.id} className="pl-4 border-l-4 border-[#c4868a]">
-                        <p className="font-bold text-sm">
-                          Instead of <span className="text-[#333D79]">{link.action}</span> to get {link.reward}:
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {(linkAlternatives[link.id] || []).filter(a => a.text.trim()).map(a => a.text).join(" · ")}
-                        </p>
-                      </div>
-                    ))}
+                    {chain.filter(link => (linkAlternatives[link.id] || []).some(a => a.text.trim())).map(link => {
+                      const reasonsText = link.reasons.filter(r => r.text.trim()).map(r => r.text).join(", ");
+                      return (
+                        <div key={link.id} className="pl-4 border-l-4 border-[#c4868a]">
+                          <p className="font-bold text-sm">
+                            Instead of: <span className="text-[#333D79]">{reasonsText}</span>
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {(linkAlternatives[link.id] || []).filter(a => a.text.trim()).map(a => a.text).join(" · ")}
+                          </p>
+                        </div>
+                      );
+                    })}
                   </div>
                   <p className="text-muted-foreground leading-relaxed pt-2">
                     The thread is unravelled. You can now see the full picture of what you need, and whether your current path is truly the only way — or just the one you haven't questioned yet.
