@@ -16,11 +16,8 @@ interface ChainLink {
   reward: string;
 }
 
-interface GoalComponent {
-  id: string;
-  name: string;
-  alternatives: { id: string; text: string }[];
-  expanded: boolean;
+interface LinkAlternatives {
+  [linkId: string]: { id: string; text: string }[];
 }
 
 type Phase = "question" | "chain" | "trade" | "decompose";
@@ -34,8 +31,8 @@ export default function Unthread() {
   const [tradeGain, setTradeGain] = useState("");
   const [tradeVerdict, setTradeVerdict] = useState<"yes" | "no" | "unsure" | null>(null);
   const [tradeReflection, setTradeReflection] = useState("");
-  const [components, setComponents] = useState<GoalComponent[]>([]);
-  const [newComponentName, setNewComponentName] = useState("");
+  const [linkAlternatives, setLinkAlternatives] = useState<LinkAlternatives>({});
+  const [expandedLinks, setExpandedLinks] = useState<Set<string>>(new Set());
 
   const handleSetQuestion = () => {
     if (question.trim().length < 5) return;
@@ -67,50 +64,38 @@ export default function Unthread() {
   };
 
   const moveToDecompose = () => {
+    setExpandedLinks(new Set(chain.map(link => link.id)));
     setPhase("decompose");
   };
 
-  const addComponent = () => {
-    if (!newComponentName.trim()) return;
-    setComponents(prev => [...prev, {
-      id: generateId(),
-      name: newComponentName.trim(),
-      alternatives: [],
-      expanded: true,
-    }]);
-    setNewComponentName("");
+  const toggleLinkExpanded = (linkId: string) => {
+    setExpandedLinks(prev => {
+      const next = new Set(prev);
+      if (next.has(linkId)) next.delete(linkId);
+      else next.add(linkId);
+      return next;
+    });
   };
 
-  const removeComponent = (id: string) => {
-    setComponents(prev => prev.filter(c => c.id !== id));
+  const addLinkAlternative = (linkId: string) => {
+    setLinkAlternatives(prev => ({
+      ...prev,
+      [linkId]: [...(prev[linkId] || []), { id: generateId(), text: "" }],
+    }));
   };
 
-  const toggleComponent = (id: string) => {
-    setComponents(prev => prev.map(c => c.id === id ? { ...c, expanded: !c.expanded } : c));
+  const updateLinkAlternative = (linkId: string, altId: string, text: string) => {
+    setLinkAlternatives(prev => ({
+      ...prev,
+      [linkId]: (prev[linkId] || []).map(a => a.id === altId ? { ...a, text } : a),
+    }));
   };
 
-  const addAlternative = (componentId: string) => {
-    setComponents(prev => prev.map(c =>
-      c.id === componentId
-        ? { ...c, alternatives: [...c.alternatives, { id: generateId(), text: "" }] }
-        : c
-    ));
-  };
-
-  const updateAlternative = (componentId: string, altId: string, text: string) => {
-    setComponents(prev => prev.map(c =>
-      c.id === componentId
-        ? { ...c, alternatives: c.alternatives.map(a => a.id === altId ? { ...a, text } : a) }
-        : c
-    ));
-  };
-
-  const removeAlternative = (componentId: string, altId: string) => {
-    setComponents(prev => prev.map(c =>
-      c.id === componentId
-        ? { ...c, alternatives: c.alternatives.filter(a => a.id !== altId) }
-        : c
-    ));
+  const removeLinkAlternative = (linkId: string, altId: string) => {
+    setLinkAlternatives(prev => ({
+      ...prev,
+      [linkId]: (prev[linkId] || []).filter(a => a.id !== altId),
+    }));
   };
 
   const handleReset = () => {
@@ -121,8 +106,8 @@ export default function Unthread() {
     setTradeGain("");
     setTradeVerdict(null);
     setTradeReflection("");
-    setComponents([]);
-    setNewComponentName("");
+    setLinkAlternatives({});
+    setExpandedLinks(new Set());
     setPhase("question");
   };
 
@@ -459,108 +444,110 @@ export default function Unthread() {
             animate={{ opacity: 1 }}
             className="space-y-6"
           >
-            <div className="border-2 border-[#c4868a] rounded-md p-4 bg-[#c4868a]/5">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Your real goal</p>
-              <p className="font-bold text-xl text-[#c4868a]">{lastReward}</p>
-            </div>
-
-            <div className="space-y-2">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold uppercase tracking-tight">Decompose The Thread</h2>
               <p className="text-sm text-muted-foreground">
-                What are the key components needed to achieve this goal? Break it down, then explore alternative ways to get each one.
+                Each link in your chain is a choice. Expand any step to explore what else could serve the same purpose.
               </p>
             </div>
 
-            <div className="flex gap-2">
-              <Input
-                value={newComponentName}
-                onChange={e => setNewComponentName(e.target.value)}
-                placeholder="e.g., Income, Purpose, Social connection..."
-                className="rounded-md border-2 border-muted h-12"
-                onKeyDown={e => e.key === "Enter" && addComponent()}
-                data-testid="input-add-component"
-              />
-              <Button
-                onClick={addComponent}
-                className="rounded-md border-2 border-foreground h-12 px-4"
-                data-testid="button-add-component"
-              >
-                <Plus className="h-5 w-5" />
-              </Button>
+            <div className="space-y-3">
+              {chain.map((link, index) => {
+                const alts = linkAlternatives[link.id] || [];
+                const isExpanded = expandedLinks.has(link.id);
+                return (
+                  <motion.div
+                    key={link.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="border-2 border-muted rounded-md overflow-hidden"
+                    data-testid={`decompose-link-${link.id}`}
+                  >
+                    <div
+                      className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                      onClick={() => toggleLinkExpanded(link.id)}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="flex-shrink-0 w-7 h-7 rounded-md bg-[#333D79] text-white flex items-center justify-center text-xs font-bold">
+                          {index + 1}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-sm truncate" data-testid={`text-link-action-${link.id}`}>
+                            {link.action}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            → {link.reward}
+                          </p>
+                        </div>
+                        {alts.filter(a => a.text.trim()).length > 0 && (
+                          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#c4868a] text-white flex items-center justify-center text-xs font-bold">
+                            {alts.filter(a => a.text.trim()).length}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0 ml-2">
+                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </div>
+                    </div>
+
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="p-4 pt-0 space-y-3 border-t border-muted">
+                            <div className="bg-muted/20 rounded-md p-3 mt-3">
+                              <p className="text-xs text-muted-foreground">
+                                You're doing <strong className="text-foreground">{link.action}</strong> to
+                                get <strong className="text-foreground">{link.reward}</strong>.
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                What else could give you the same result?
+                              </p>
+                            </div>
+
+                            {alts.map(alt => (
+                              <div key={alt.id} className="flex gap-2 items-center">
+                                <span className="text-[#c4868a] text-sm font-bold flex-shrink-0">→</span>
+                                <Input
+                                  value={alt.text}
+                                  onChange={e => updateLinkAlternative(link.id, alt.id, e.target.value)}
+                                  placeholder="An alternative approach..."
+                                  className="rounded-md border-2 border-muted h-10 flex-1"
+                                  data-testid={`input-alt-${alt.id}`}
+                                />
+                                <button
+                                  onClick={() => removeLinkAlternative(link.id, alt.id)}
+                                  className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
+                                  data-testid={`button-remove-alt-${alt.id}`}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+
+                            <button
+                              onClick={() => addLinkAlternative(link.id)}
+                              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors pt-1"
+                              data-testid={`button-add-alt-${link.id}`}
+                            >
+                              <Plus className="h-3 w-3" />
+                              Add alternative
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                );
+              })}
             </div>
 
-            <AnimatePresence>
-              {components.map(comp => (
-                <motion.div
-                  key={comp.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="border-2 border-muted rounded-md overflow-hidden"
-                  data-testid={`component-${comp.id}`}
-                >
-                  <div
-                    className="flex items-center justify-between p-4 bg-[#333D79]/5 cursor-pointer"
-                    onClick={() => toggleComponent(comp.id)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-md bg-[#333D79] text-white flex items-center justify-center text-sm font-bold">
-                        {comp.alternatives.length}
-                      </div>
-                      <h3 className="font-bold uppercase tracking-wider">{comp.name}</h3>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={e => { e.stopPropagation(); removeComponent(comp.id); }}
-                        className="text-muted-foreground hover:text-destructive transition-colors"
-                        data-testid={`button-remove-component-${comp.id}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                      {comp.expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </div>
-                  </div>
-
-                  {comp.expanded && (
-                    <div className="p-4 space-y-3">
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                        Alternative ways to get "{comp.name}":
-                      </p>
-
-                      {comp.alternatives.map(alt => (
-                        <div key={alt.id} className="flex gap-2 items-center">
-                          <span className="text-muted-foreground text-sm">→</span>
-                          <Input
-                            value={alt.text}
-                            onChange={e => updateAlternative(comp.id, alt.id, e.target.value)}
-                            placeholder="e.g., Freelancing, different job, passive income..."
-                            className="rounded-md border-2 border-muted h-10 flex-1"
-                            data-testid={`input-alternative-${alt.id}`}
-                          />
-                          <button
-                            onClick={() => removeAlternative(comp.id, alt.id)}
-                            className="text-muted-foreground hover:text-destructive transition-colors"
-                            data-testid={`button-remove-alt-${alt.id}`}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-
-                      <button
-                        onClick={() => addAlternative(comp.id)}
-                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors pt-1"
-                        data-testid={`button-add-alternative-${comp.id}`}
-                      >
-                        <Plus className="h-3 w-3" />
-                        Add alternative
-                      </button>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-
-            {components.length > 0 && components.some(c => c.alternatives.some(a => a.text.trim())) && (
+            {chain.some(link => (linkAlternatives[link.id] || []).some(a => a.text.trim())) && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -569,19 +556,19 @@ export default function Unthread() {
                 <h2 className="text-3xl font-bold uppercase tracking-tight text-center">The Insight</h2>
                 <div className="border-2 border-muted rounded-md p-6 space-y-4">
                   <p className="text-muted-foreground leading-relaxed">
-                    You're currently using <strong className="text-foreground">{chain[0]?.action || "your current approach"}</strong> to
-                    get <strong className="text-foreground">{lastReward}</strong>. But that goal breaks down
-                    into {components.length} key component{components.length !== 1 ? "s" : ""}:
+                    You traced a thread from <strong className="text-foreground">{chain[0]?.action || "your frustration"}</strong> to
+                    what you really want: <strong className="text-foreground">{lastReward}</strong>. Here's where
+                    the thread could be rewoven:
                   </p>
                   <div className="space-y-3">
-                    {components.map(comp => (
-                      <div key={comp.id} className="pl-4 border-l-4 border-[#333D79]">
-                        <p className="font-bold text-sm uppercase tracking-wider">{comp.name}</p>
-                        {comp.alternatives.filter(a => a.text.trim()).length > 0 && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Could also come from: {comp.alternatives.filter(a => a.text.trim()).map(a => a.text).join(", ")}
-                          </p>
-                        )}
+                    {chain.filter(link => (linkAlternatives[link.id] || []).some(a => a.text.trim())).map(link => (
+                      <div key={link.id} className="pl-4 border-l-4 border-[#c4868a]">
+                        <p className="font-bold text-sm">
+                          Instead of <span className="text-[#333D79]">{link.action}</span> to get {link.reward}:
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {(linkAlternatives[link.id] || []).filter(a => a.text.trim()).map(a => a.text).join(" · ")}
+                        </p>
                       </div>
                     ))}
                   </div>
