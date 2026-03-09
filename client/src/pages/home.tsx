@@ -104,6 +104,11 @@ export default function Home() {
                   </Button>
                 </Link>
               </div>
+              <Link href="/terms">
+                <span className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors cursor-pointer" data-testid="link-terms">
+                  Terms of Use
+                </span>
+              </Link>
             </div>
             <div className="hidden md:flex justify-end relative">
               <div className="absolute inset-0 bg-foreground/5 translate-x-4 translate-y-4 z-0"></div>

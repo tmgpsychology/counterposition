@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import ProsCons from "@/pages/pros-cons";
 import Unthread from "@/pages/unthread";
+import Disclaimer from "@/pages/disclaimer";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Home}/>
       <Route path="/weigh-it-up" component={ProsCons}/>
       <Route path="/unthread" component={Unthread}/>
+      <Route path="/terms" component={Disclaimer}/>
       <Route component={NotFound} />
     </Switch>
   );
