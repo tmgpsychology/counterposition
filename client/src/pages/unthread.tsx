@@ -339,11 +339,6 @@ export default function Unthread() {
                   <ArrowDown className="h-5 w-5 text-muted-foreground" />
                 </div>
 
-                <div className="border-2 border-[#c4868a] rounded-md p-4 bg-[#c4868a]/5">
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">The real goal</p>
-                  <p className="font-bold text-lg text-[#c4868a]" data-testid="text-real-goal">{lastReward}</p>
-                </div>
-
                 <div className="flex justify-center pt-4">
                   <Button
                     onClick={moveToTrade}
@@ -351,7 +346,7 @@ export default function Unthread() {
                     data-testid="button-to-trade"
                   >
                     <ArrowDown className="h-5 w-5 mr-2" />
-                    Name the trade
+                    Let's see what choice I'm making
                   </Button>
                 </div>
               </motion.div>
@@ -366,7 +361,7 @@ export default function Unthread() {
             className="space-y-6"
           >
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold uppercase tracking-tight">Name The Trade</h2>
+              <h2 className="text-2xl font-bold uppercase tracking-tight">The Choice I'm Making</h2>
               <p className="text-sm text-muted-foreground">
                 Every decision is a trade. You pay a cost to receive a gain. Make it explicit.
               </p>
