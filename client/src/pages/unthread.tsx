@@ -135,7 +135,7 @@ export default function Unthread() {
   const allReasons = chain.flatMap(link => link.reasons.filter(r => r.text.trim()).map(r => r.text));
   const lastReward = allReasons.length > 0 ? allReasons[allReasons.length - 1] : "";
   const chainComplete = chain.length > 0 && chain.every(link => link.reasons.some(r => r.text.trim()));
-  const tradeComplete = chainComplete && tradeVerdict !== null;
+  const tradeComplete = chainComplete;
 
   if (!questionSet) {
     return (
@@ -398,69 +398,16 @@ export default function Unthread() {
               </div>
             </div>
 
-            <div className="border-2 border-foreground rounded-md p-6 bg-foreground/5 text-center space-y-4">
-              <p className="text-lg leading-relaxed">
-                Phrased as a choice, I'm choosing to pay the cost of <strong className="text-[#c4868a]">{tradeCost}</strong> for
-                the gain of <strong className="text-[#333D79]">{tradeGain}</strong>.
-              </p>
-              <p className="text-xl font-bold uppercase tracking-wider">
-                Is this trade worth it?
-              </p>
-              <div className="flex justify-center gap-3 pt-2 flex-wrap">
-                {(["yes", "unsure", "no"] as const).map(option => (
-                  <button
-                    key={option}
-                    onClick={() => setTradeVerdict(option)}
-                    className={`px-6 py-3 rounded-md border-2 font-bold uppercase tracking-wider text-sm transition-all ${
-                      tradeVerdict === option
-                        ? option === "yes" ? "bg-[#333D79] text-white border-[#333D79]"
-                          : option === "no" ? "bg-[#c4868a] text-white border-[#c4868a]"
-                          : "bg-foreground text-background border-foreground"
-                        : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"
-                    }`}
-                    data-testid={`button-verdict-${option}`}
-                  >
-                    {option === "yes" ? "Yes, worth it" : option === "no" ? "No, not worth it" : "I'm not sure"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {tradeVerdict && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-4"
+            <div className="flex justify-center pt-4">
+              <Button
+                onClick={moveToDecompose}
+                className="rounded-md h-14 px-8 uppercase tracking-widest bg-[#333D79] hover:bg-[#333D79]/90"
+                data-testid="button-to-decompose"
               >
-                <div>
-                  <label className="text-xs uppercase tracking-widest text-muted-foreground mb-2 block">
-                    {tradeVerdict === "yes"
-                      ? "What makes this trade worth it for you?"
-                      : tradeVerdict === "no"
-                      ? "What would need to change to make it worth it?"
-                      : "What would help you decide?"}
-                  </label>
-                  <Textarea
-                    value={tradeReflection}
-                    onChange={e => setTradeReflection(e.target.value)}
-                    placeholder="e.g., I'd need to find a less stressful way to earn the same income..."
-                    className="min-h-[100px] rounded-md border-2 border-muted"
-                    data-testid="input-trade-reflection"
-                  />
-                </div>
-
-                <div className="flex justify-center pt-4">
-                  <Button
-                    onClick={moveToDecompose}
-                    className="rounded-md h-14 px-8 uppercase tracking-widest bg-[#333D79] hover:bg-[#333D79]/90"
-                    data-testid="button-to-decompose"
-                  >
-                    <Lightbulb className="h-5 w-5 mr-2" />
-                    {tradeVerdict === "yes" ? "Explore it deeper" : "Find alternatives"}
-                  </Button>
-                </div>
-              </motion.div>
-            )}
+                <Lightbulb className="h-5 w-5 mr-2" />
+                Decompose it
+              </Button>
+            </div>
           </motion.div>
         )}
 
