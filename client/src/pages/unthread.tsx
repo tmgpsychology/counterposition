@@ -420,7 +420,7 @@ export default function Unthread() {
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold uppercase tracking-tight">Decompose The Thread</h2>
               <p className="text-sm text-muted-foreground">
-                Each link in your chain is a choice. Expand any step to explore what else could serve the same purpose.
+                Each link in your chain serves a purpose. Expand any step to explore what else could serve the same one.
               </p>
             </div>
 
