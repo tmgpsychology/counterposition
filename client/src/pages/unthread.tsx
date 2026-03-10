@@ -216,21 +216,21 @@ export default function Unthread() {
         <div className="flex justify-center gap-2 flex-wrap">
           <button
             onClick={() => setPhase("chain")}
-            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md border-2 transition-all ${phase === "chain" ? "bg-[#333D79] text-white border-[#333D79]" : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"}`}
+            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md border-2 transition-all ${phase === "chain" ? "bg-[#5B7B6A] text-white border-[#5B7B6A]" : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"}`}
             data-testid="tab-chain"
           >
             1. The Chain
           </button>
           <button
             onClick={() => chainComplete && moveToTrade()}
-            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md border-2 transition-all ${phase === "trade" ? "bg-[#333D79] text-white border-[#333D79]" : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"} ${!chainComplete ? "opacity-40 cursor-not-allowed" : ""}`}
+            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md border-2 transition-all ${phase === "trade" ? "bg-[#5B7B6A] text-white border-[#5B7B6A]" : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"} ${!chainComplete ? "opacity-40 cursor-not-allowed" : ""}`}
             data-testid="tab-trade"
           >
             2. The Trade
           </button>
           <button
             onClick={() => tradeComplete && setPhase("decompose")}
-            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md border-2 transition-all ${phase === "decompose" ? "bg-[#333D79] text-white border-[#333D79]" : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"} ${!tradeComplete ? "opacity-40 cursor-not-allowed" : ""}`}
+            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md border-2 transition-all ${phase === "decompose" ? "bg-[#5B7B6A] text-white border-[#5B7B6A]" : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"} ${!tradeComplete ? "opacity-40 cursor-not-allowed" : ""}`}
             data-testid="tab-decompose"
           >
             3. Decompose
@@ -243,7 +243,7 @@ export default function Unthread() {
             animate={{ opacity: 1 }}
             className="space-y-2"
           >
-            <div className="border-2 border-[#333D79] rounded-md p-4 bg-[#333D79]/5">
+            <div className="border-2 border-[#5B7B6A] rounded-md p-4 bg-[#5B7B6A]/5">
               <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">I am currently doing this</p>
               <p className="font-bold text-lg" data-testid="text-starting-point">{question}</p>
             </div>
@@ -342,7 +342,7 @@ export default function Unthread() {
                 <div className="flex justify-center pt-4">
                   <Button
                     onClick={moveToTrade}
-                    className="rounded-md h-14 px-8 uppercase tracking-widest bg-[#333D79] hover:bg-[#333D79]/90"
+                    className="rounded-md h-14 px-8 uppercase tracking-widest bg-[#5B7B6A] hover:bg-[#5B7B6A]/90"
                     data-testid="button-to-trade"
                   >
                     <ArrowDown className="h-5 w-5 mr-2" />
@@ -368,9 +368,9 @@ export default function Unthread() {
             </div>
 
             <div className="space-y-0">
-              <div className="border-2 border-[#c4868a] rounded-md p-4 bg-[#c4868a]/5">
+              <div className="border-2 border-[#C27D60] rounded-md p-4 bg-[#C27D60]/5">
                 <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">What I'm doing</p>
-                <p className="font-bold text-lg text-[#c4868a]" data-testid="text-trade-cost">{question}</p>
+                <p className="font-bold text-lg text-[#C27D60]" data-testid="text-trade-cost">{question}</p>
               </div>
 
               {chain.map((link, index) => (
@@ -392,16 +392,16 @@ export default function Unthread() {
               <div className="flex justify-center py-1">
                 <ArrowDown className="h-4 w-4 text-muted-foreground" />
               </div>
-              <div className="border-2 border-[#333D79] rounded-md p-4 bg-[#333D79]/5">
+              <div className="border-2 border-[#5B7B6A] rounded-md p-4 bg-[#5B7B6A]/5">
                 <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">What I'm getting</p>
-                <p className="font-bold text-lg text-[#333D79]" data-testid="text-trade-gain">{tradeGain}</p>
+                <p className="font-bold text-lg text-[#5B7B6A]" data-testid="text-trade-gain">{tradeGain}</p>
               </div>
             </div>
 
             <div className="flex justify-center pt-4">
               <Button
                 onClick={moveToDecompose}
-                className="rounded-md h-14 px-8 uppercase tracking-widest bg-[#333D79] hover:bg-[#333D79]/90"
+                className="rounded-md h-14 px-8 uppercase tracking-widest bg-[#5B7B6A] hover:bg-[#5B7B6A]/90"
                 data-testid="button-to-decompose"
               >
                 <Lightbulb className="h-5 w-5 mr-2" />
@@ -444,7 +444,7 @@ export default function Unthread() {
                       onClick={() => toggleLinkExpanded(link.id)}
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="flex-shrink-0 w-7 h-7 rounded-md bg-[#333D79] text-white flex items-center justify-center text-xs font-bold">
+                        <div className="flex-shrink-0 w-7 h-7 rounded-md bg-[#5B7B6A] text-white flex items-center justify-center text-xs font-bold">
                           {index + 1}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -454,7 +454,7 @@ export default function Unthread() {
                           </p>
                         </div>
                         {alts.filter(a => a.text.trim()).length > 0 && (
-                          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#c4868a] text-white flex items-center justify-center text-xs font-bold">
+                          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#A86B4F] text-white flex items-center justify-center text-xs font-bold">
                             {alts.filter(a => a.text.trim()).length}
                           </div>
                         )}
@@ -484,7 +484,7 @@ export default function Unthread() {
 
                             {alts.map(alt => (
                               <div key={alt.id} className="flex gap-2 items-center">
-                                <span className="text-[#c4868a] text-sm font-bold flex-shrink-0">→</span>
+                                <span className="text-[#C27D60] text-sm font-bold flex-shrink-0">→</span>
                                 <Input
                                   value={alt.text}
                                   onChange={e => updateLinkAlternative(link.id, alt.id, e.target.value)}
@@ -536,9 +536,9 @@ export default function Unthread() {
                     {chain.filter(link => (linkAlternatives[link.id] || []).some(a => a.text.trim())).map(link => {
                       const reasonsText = link.reasons.filter(r => r.text.trim()).map(r => r.text).join(", ");
                       return (
-                        <div key={link.id} className="pl-4 border-l-4 border-[#c4868a]">
+                        <div key={link.id} className="pl-4 border-l-4 border-[#C27D60]">
                           <p className="font-bold text-sm">
-                            Instead of: <span className="text-[#333D79]">{reasonsText}</span>
+                            Instead of: <span className="text-[#5B7B6A]">{reasonsText}</span>
                           </p>
                           <p className="text-sm text-muted-foreground mt-1">
                             {(linkAlternatives[link.id] || []).filter(a => a.text.trim()).map(a => a.text).join(" · ")}

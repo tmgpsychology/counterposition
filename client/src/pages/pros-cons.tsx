@@ -276,7 +276,7 @@ export default function ProsCons() {
           <div className="flex-1 min-w-0">
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold uppercase tracking-wider text-[#333D79] border-b-2 border-[#333D79] pb-2">Pros</h2>
+                <h2 className="text-2xl font-bold uppercase tracking-wider text-[#5B7B6A] border-b-2 border-[#5B7B6A] pb-2">Pros</h2>
                 <div className="flex gap-2">
                   <Input
                     value={newPro}
@@ -302,7 +302,7 @@ export default function ProsCons() {
               </div>
 
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold uppercase tracking-wider text-[#c4868a] border-b-2 border-[#F5E6E8] pb-2">Cons</h2>
+                <h2 className="text-2xl font-bold uppercase tracking-wider text-[#C27D60] border-b-2 border-[#E8DDD4] pb-2">Cons</h2>
                 <div className="flex gap-2">
                   <Input
                     value={newCon}
@@ -342,7 +342,7 @@ export default function ProsCons() {
               <div className="text-center min-w-[48px]">
                 {selectedItem ? (
                   <div>
-                    <p className={`text-[9px] font-bold uppercase tracking-widest leading-tight ${selectedBarSide === "pro" ? "text-[#333D79]" : "text-[#c4868a]"}`}>
+                    <p className={`text-[9px] font-bold uppercase tracking-widest leading-tight ${selectedBarSide === "pro" ? "text-[#5B7B6A]" : "text-[#C27D60]"}`}>
                       {selectedItem.label}
                     </p>
                     <p className="text-xl font-bold">{selectedItem.weight}</p>
@@ -391,8 +391,8 @@ export default function ProsCons() {
                           animate={{ opacity: 1, scale: 1 }}
                           className={`px-4 py-2 border-2 rounded-md text-sm font-medium uppercase tracking-wider transition-all hover:scale-105 ${
                             suggestion.side === "pro"
-                              ? "border-[#333D79]/50 text-[#333D79] hover:bg-[#333D79]/10"
-                              : "border-[#d4c0c3] text-[#c4868a] hover:bg-[#F5E6E8]/30"
+                              ? "border-[#5B7B6A]/50 text-[#5B7B6A] hover:bg-[#5B7B6A]/10"
+                              : "border-[#D1CCC5] text-[#C27D60] hover:bg-[#E8DDD4]/30"
                           }`}
                           onClick={() => addSuggestion(suggestion)}
                           data-testid={`button-suggestion-${suggestion.text.slice(0, 20)}`}
@@ -420,26 +420,26 @@ export default function ProsCons() {
               <div className="flex flex-col items-center">
                 <div className="flex items-center justify-center" style={{ height: maxSummaryRadius * 2 + 20 }}>
                   <div
-                    className="rounded-full bg-[#333D79]/20 border-4 border-[#333D79] flex items-center justify-center transition-all duration-500"
+                    className="rounded-full bg-[#5B7B6A]/20 border-4 border-[#5B7B6A] flex items-center justify-center transition-all duration-500"
                     style={{ width: proSummaryRadius * 2 + 20, height: proSummaryRadius * 2 + 20 }}
                     data-testid="circle-summary-pros"
                   >
-                    <span className="text-2xl font-bold text-[#333D79]">{proPercent}%</span>
+                    <span className="text-2xl font-bold text-[#5B7B6A]">{proPercent}%</span>
                   </div>
                 </div>
-                <p className="text-sm font-bold uppercase tracking-widest text-[#333D79] mt-4">Pros</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-[#5B7B6A] mt-4">Pros</p>
               </div>
               <div className="flex flex-col items-center">
                 <div className="flex items-center justify-center" style={{ height: maxSummaryRadius * 2 + 20 }}>
                   <div
                     className="rounded-full border-4 flex items-center justify-center transition-all duration-500"
-                    style={{ width: conSummaryRadius * 2 + 20, height: conSummaryRadius * 2 + 20, backgroundColor: "rgba(245,230,232,0.3)", borderColor: "#d4c0c3" }}
+                    style={{ width: conSummaryRadius * 2 + 20, height: conSummaryRadius * 2 + 20, backgroundColor: "rgba(194,125,96,0.1)", borderColor: "#D1CCC5" }}
                     data-testid="circle-summary-cons"
                   >
-                    <span className="text-2xl font-bold text-[#c4868a]">{conPercent}%</span>
+                    <span className="text-2xl font-bold text-[#C27D60]">{conPercent}%</span>
                   </div>
                 </div>
-                <p className="text-sm font-bold uppercase tracking-widest text-[#c4868a] mt-4">Cons</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-[#C27D60] mt-4">Cons</p>
               </div>
             </div>
           </motion.div>
@@ -476,9 +476,9 @@ function BarChart({
 
   const isPro = color === "pro";
   const barStyle = isPro
-    ? { backgroundColor: "#333D79", borderColor: "#333D79" }
-    : { backgroundColor: "#c4868a", borderColor: "#b0747a" };
-  const ringClass = isPro ? "ring-[#333D79]" : "ring-[#c4868a]";
+    ? { backgroundColor: "#5B7B6A", borderColor: "#5B7B6A" }
+    : { backgroundColor: "#A86B4F", borderColor: "#A86B4F" };
+  const ringClass = isPro ? "ring-[#5B7B6A]" : "ring-[#C27D60]";
   const barTextClass = isPro ? "text-white" : "text-white";
 
   return (

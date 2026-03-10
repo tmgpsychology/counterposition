@@ -28,11 +28,16 @@ Decision decomposition tool with 3 phases:
 ### Terms of Use (`/terms`)
 Professional disclaimer covering AI usage, data handling, and limitation of liability.
 
-## Design
-- Colors: navy `#333D79`, muted rose `#c4868a`, white text on colored elements
-- Rounded corners (`rounded-md`) on inner tool pages
+## Design — "Sage & Walnut" Theme
+- Background: `#F7F6F3` (soft warm white)
+- Card/surface: `#EEEAE4` (light warm sand)
+- Text: `#33312E` (dark walnut)
+- Muted text: `#7D7871` (warm stone)
+- Borders: `#D1CCC5` (light stone)
+- Primary accent / Pro color: `#5B7B6A` (muted sage green)
+- Secondary accent / Con color: `#C27D60` (warm clay)
+- Rounded corners (`rounded-md`, 0.5rem radius)
 - Uppercase tracking-widest labels throughout
-- Pro color: `#333D79`, Con color: `#c4868a`
 
 ## Tech Stack
 - **Frontend**: React + Vite, Tailwind CSS, Framer Motion, wouter routing, shadcn/ui components
