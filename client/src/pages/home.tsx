@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Brain, Scale, Unlink } from "lucide-react";
+import { ArrowRight, Brain, Scale, Unlink, Lightbulb } from "lucide-react";
 import { Link } from "wouter";
 
 const tools = [
@@ -9,7 +9,7 @@ const tools = [
     href: "/counterposition",
     icon: Brain,
     color: "#333D79",
-    video: "/videos/counterposition_tutorial.mp4",
+    hint: "Try something like: \"I believe social media does more harm than good.\" Then argue the opposite as convincingly as you can. The stronger your counter-argument, the higher your score.",
   },
   {
     name: "Weigh It Up",
@@ -17,7 +17,7 @@ const tools = [
     href: "/weigh-it-up",
     icon: Scale,
     color: "#c4868a",
-    video: "/videos/weighitup_tutorial.mp4",
+    hint: "Enter a decision like \"Should I move abroad?\" then add pros and cons. Tap a bar and use +/- to adjust how important each factor is. The verdict shows which side wins overall.",
   },
   {
     name: "Unthread",
@@ -25,7 +25,7 @@ const tools = [
     href: "/unthread",
     icon: Unlink,
     color: "#333D79",
-    video: "/videos/unthread_tutorial.mp4",
+    hint: "Start with something you do but question, like \"Working long stressful hours.\" Then ask yourself why — because it gives you money, security, etc. Keep chaining until you find the real reason.",
   },
 ];
 
@@ -57,34 +57,27 @@ export default function Home() {
                   className="group border-2 border-muted rounded-md p-6 sm:p-8 hover:border-foreground transition-all cursor-pointer relative overflow-hidden"
                   data-testid={`card-${tool.name.toLowerCase().replace(/\s+/g, "-")}`}
                 >
-                  <div className="flex flex-col sm:flex-row gap-5">
-                    <div className="flex-1 min-w-0 space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: tool.color }}
-                        >
-                          <tool.icon className="h-5 w-5 text-white" />
-                        </div>
-                        <h2 className="text-xl sm:text-2xl font-bold uppercase tracking-tight">
-                          {tool.name}
-                        </h2>
-                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all flex-shrink-0 ml-auto" />
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: tool.color }}
+                      >
+                        <tool.icon className="h-5 w-5 text-white" />
                       </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {tool.description}
-                      </p>
+                      <h2 className="text-xl sm:text-2xl font-bold uppercase tracking-tight">
+                        {tool.name}
+                      </h2>
+                      <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all flex-shrink-0 ml-auto" />
                     </div>
-                    <div className="sm:w-48 flex-shrink-0 rounded-md overflow-hidden border border-muted bg-muted/10">
-                      <video
-                        src={tool.video}
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        className="w-full h-auto object-cover"
-                        data-testid={`video-${tool.name.toLowerCase().replace(/\s+/g, "-")}`}
-                      />
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {tool.description}
+                    </p>
+                    <div className="flex items-start gap-2 rounded-md bg-muted/30 p-3 border border-muted/50">
+                      <Lightbulb className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-muted-foreground leading-relaxed italic" data-testid={`hint-${tool.name.toLowerCase().replace(/\s+/g, "-")}`}>
+                        {tool.hint}
+                      </p>
                     </div>
                   </div>
                   <div
