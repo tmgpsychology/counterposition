@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowLeft, Brain, RefreshCcw, ShieldAlert, Zap, BookOpen } from "lucide-react";
+import { ArrowRight, ArrowLeft, Brain, RefreshCcw, ShieldAlert, Zap, BookOpen, Share2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { calculateEffortScore, type ScoreResult, type MetricDetail } from "@/lib/scoring";
@@ -10,11 +10,52 @@ import { ChevronDown, CheckCircle, Lightbulb } from "lucide-react";
 
 type Step = "belief" | "counter" | "analyzing" | "result";
 
+function encodeShareData(belief: string, counter: string): string {
+  const data = JSON.stringify({ b: belief, c: counter });
+  return btoa(unescape(encodeURIComponent(data)));
+}
+
+function decodeShareData(encoded: string): { b: string; c: string } | null {
+  try {
+    const json = decodeURIComponent(escape(atob(encoded)));
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
 export default function Counterposition() {
   const [step, setStep] = useState<Step>("belief");
   const [belief, setBelief] = useState("");
   const [counterArgument, setCounterArgument] = useState("");
   const [score, setScore] = useState<ScoreResult | null>(null);
+  const [shared, setShared] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const shareParam = params.get("s");
+    if (shareParam) {
+      const data = decodeShareData(shareParam);
+      if (data) {
+        setBelief(data.b);
+        setCounterArgument(data.c);
+        setScore(calculateEffortScore(data.b, data.c));
+        setStep("result");
+        setShared(true);
+      }
+    }
+  }, []);
+
+  const handleShare = () => {
+    const encoded = encodeShareData(belief, counterArgument);
+    const url = `${window.location.origin}/counterposition?s=${encoded}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   const handleBeliefSubmit = () => {
     if (belief.trim().length > 10) {
@@ -38,6 +79,11 @@ export default function Counterposition() {
     setCounterArgument("");
     setScore(null);
     setStep("belief");
+    setShared(false);
+    setCopied(false);
+    if (window.location.search) {
+      window.history.replaceState({}, '', '/counterposition');
+    }
   };
 
   const containerVariants = {
@@ -224,6 +270,22 @@ export default function Counterposition() {
             exit="exit"
             className="w-full max-w-4xl"
           >
+            {shared && (
+              <div className="mb-6 border-2 border-muted rounded-md bg-card p-5 space-y-3">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Shared Result</p>
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Original belief</p>
+                    <p className="text-sm italic border-l-4 border-[#5B7B6A] pl-3">"{belief}"</p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Counter-argument</p>
+                    <p className="text-sm italic border-l-4 border-[#C27D60] pl-3">"{counterArgument}"</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid md:grid-cols-[1fr_2fr] gap-8">
               {/* Score Display */}
               <div className="flex flex-col items-center justify-center p-8 border-4 border-foreground bg-card">
@@ -292,13 +354,21 @@ export default function Counterposition() {
                   </p>
                 </motion.div>
 
-                <div className="pt-4">
+                <div className="pt-4 flex gap-3">
+                  <Button 
+                    onClick={handleShare}
+                    className="flex-1 rounded-none border-2 border-[#5B7B6A] h-16 text-lg uppercase tracking-widest bg-[#5B7B6A] text-white hover:bg-[#5B7B6A]/90 transition-all"
+                    data-testid="button-share"
+                  >
+                    {copied ? <Check className="mr-3 h-5 w-5" /> : <Share2 className="mr-3 h-5 w-5" />}
+                    {copied ? "Link Copied" : "Share Result"}
+                  </Button>
                   <Button 
                     onClick={handleReset}
-                    className="w-full rounded-none border-2 border-foreground h-16 text-lg uppercase tracking-widest bg-transparent text-foreground hover:bg-foreground hover:text-background transition-all"
+                    className="flex-1 rounded-none border-2 border-foreground h-16 text-lg uppercase tracking-widest bg-transparent text-foreground hover:bg-foreground hover:text-background transition-all"
                   >
                     <RefreshCcw className="mr-3 h-5 w-5" />
-                    New Hypothesis
+                    {shared ? "Try It Yourself" : "New Hypothesis"}
                   </Button>
                 </div>
               </div>
