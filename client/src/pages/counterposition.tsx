@@ -10,20 +10,6 @@ import { ChevronDown, CheckCircle, Lightbulb } from "lucide-react";
 
 type Step = "belief" | "counter" | "analyzing" | "result";
 
-function encodeShareData(belief: string, counter: string): string {
-  const data = JSON.stringify({ b: belief, c: counter });
-  return btoa(unescape(encodeURIComponent(data)));
-}
-
-function decodeShareData(encoded: string): { b: string; c: string } | null {
-  try {
-    const json = decodeURIComponent(escape(atob(encoded)));
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
-}
-
 export default function Counterposition() {
   const [step, setStep] = useState<Step>("belief");
   const [belief, setBelief] = useState("");
@@ -35,26 +21,37 @@ export default function Counterposition() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const shareParam = params.get("s");
-    if (shareParam) {
-      const data = decodeShareData(shareParam);
-      if (data) {
-        setBelief(data.b);
-        setCounterArgument(data.c);
-        setScore(calculateEffortScore(data.b, data.c));
-        setStep("result");
-        setShared(true);
-      }
+    const shareId = params.get("s");
+    if (shareId) {
+      fetch(`/api/share/${shareId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data) {
+            setBelief(data.b);
+            setCounterArgument(data.c);
+            setScore(calculateEffortScore(data.b, data.c));
+            setStep("result");
+            setShared(true);
+          }
+        });
     }
   }, []);
 
-  const handleShare = () => {
-    const encoded = encodeShareData(belief, counterArgument);
-    const url = `${window.location.origin}/counterposition?s=${encoded}`;
-    navigator.clipboard.writeText(url).then(() => {
+  const handleShare = async () => {
+    try {
+      const res = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ b: belief, c: counterArgument }),
+      });
+      const { id } = await res.json();
+      const url = `${window.location.origin}/counterposition?s=${id}`;
+      await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    });
+    } catch (e) {
+      console.error("Share failed:", e);
+    }
   };
 
   const handleBeliefSubmit = () => {
