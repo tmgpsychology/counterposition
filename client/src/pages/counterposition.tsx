@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { calculateEffortScore, type ScoreResult } from "@/lib/scoring";
+import { calculateEffortScore, type ScoreResult, type MetricDetail } from "@/lib/scoring";
+import { ChevronDown, CheckCircle, Lightbulb } from "lucide-react";
 
 type Step = "belief" | "counter" | "analyzing" | "result";
 
@@ -255,27 +256,23 @@ export default function Counterposition() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <MetricCard 
                     title="Structural Depth" 
-                    grade={score.metrics.depth.grade}
                     icon={<Brain className="h-5 w-5" />}
-                    desc={score.metrics.depth.desc}
+                    metric={score.metrics.depth}
                   />
                   <MetricCard 
                     title="Intellectual Friction" 
-                    grade={score.metrics.friction.grade}
                     icon={<Zap className="h-5 w-5" />}
-                    desc={score.metrics.friction.desc}
+                    metric={score.metrics.friction}
                   />
                   <MetricCard 
                     title="Rhetorical Range" 
-                    grade={score.metrics.vocabulary.grade}
                     icon={<ShieldAlert className="h-5 w-5" />}
-                    desc={score.metrics.vocabulary.desc}
+                    metric={score.metrics.vocabulary}
                   />
                   <MetricCard 
                     title="Research Quality" 
-                    grade={score.metrics.research.grade}
                     icon={<BookOpen className="h-5 w-5" />}
-                    desc={score.metrics.research.desc}
+                    metric={score.metrics.research}
                   />
                 </div>
 
@@ -314,22 +311,72 @@ export default function Counterposition() {
   );
 }
 
-function MetricCard({ title, grade, icon, desc }: { title: string, grade: string, icon: React.ReactNode, desc: string }) {
+function MetricCard({ title, icon, metric }: { title: string, icon: React.ReactNode, metric: MetricDetail }) {
+  const [expanded, setExpanded] = useState(false);
+  const isWeak = metric.grade.startsWith('C') || metric.grade.startsWith('D') || metric.grade.startsWith('F');
+
   return (
-    <div className="p-4 border-2 border-muted bg-card">
-      <div className="flex justify-between items-center mb-2">
-        <span className="font-bold uppercase text-sm tracking-wider flex items-center gap-2">
-          {icon}
-          {title}
-        </span>
-        <span className={`font-bold text-lg ${
-          grade.startsWith('A') ? 'text-green-500' :
-          grade.startsWith('B') ? 'text-blue-500' :
-          grade.startsWith('C') ? 'text-yellow-500' :
-          'text-destructive'
-        }`}>{grade}</span>
+    <div
+      className="border-2 border-muted bg-card cursor-pointer transition-all hover:border-[#5B7B6A]/40"
+      onClick={() => setExpanded(!expanded)}
+      data-testid={`card-metric-${title.toLowerCase().replace(/\s+/g, '-')}`}
+    >
+      <div className="p-4">
+        <div className="flex justify-between items-center mb-2">
+          <span className="font-bold uppercase text-sm tracking-wider flex items-center gap-2">
+            {icon}
+            {title}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className={`font-bold text-lg ${
+              metric.grade.startsWith('A') ? 'text-green-500' :
+              metric.grade.startsWith('B') ? 'text-blue-500' :
+              metric.grade.startsWith('C') ? 'text-yellow-500' :
+              'text-destructive'
+            }`}>{metric.grade}</span>
+            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">{metric.desc}</p>
       </div>
-      <p className="text-xs text-muted-foreground mt-3">{desc}</p>
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 space-y-3 border-t border-muted pt-3">
+              {metric.found.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#5B7B6A]">What we found</p>
+                  {metric.found.map((item, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <CheckCircle className="h-3.5 w-3.5 text-[#5B7B6A] mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-foreground/80">{item}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {isWeak && metric.tips.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#C27D60]">Starter points</p>
+                  {metric.tips.map((tip, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <Lightbulb className="h-3.5 w-3.5 text-[#C27D60] mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-foreground/80">{tip}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

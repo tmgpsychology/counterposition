@@ -1,11 +1,18 @@
+export interface MetricDetail {
+  grade: string;
+  desc: string;
+  found: string[];
+  tips: string[];
+}
+
 export interface ScoreResult {
   grade: string;
   summary: string;
   metrics: {
-    depth: { grade: string; desc: string };
-    friction: { grade: string; desc: string };
-    vocabulary: { grade: string; desc: string };
-    research: { grade: string; desc: string };
+    depth: MetricDetail;
+    friction: MetricDetail;
+    vocabulary: MetricDetail;
+    research: MetricDetail;
   };
 }
 
@@ -38,6 +45,10 @@ function gradeToNumber(grade: string): number {
   return map[grade] ?? 45;
 }
 
+function isWeakGrade(grade: string): boolean {
+  return grade.startsWith('C') || grade.startsWith('D') || grade.startsWith('F');
+}
+
 export function calculateEffortScore(belief: string, counter: string): ScoreResult {
   const counterWords = counter.trim().split(/\s+/);
   const wordCount = counterWords.length;
@@ -45,24 +56,64 @@ export function calculateEffortScore(belief: string, counter: string): ScoreResu
   let depthScore = Math.min(100, Math.floor((wordCount / 150) * 100));
   if (wordCount < 20) depthScore = Math.max(10, depthScore - 20);
 
+  const depthFound: string[] = [];
+  if (wordCount >= 100) depthFound.push(`Strong length: ${wordCount} words`);
+  else if (wordCount >= 50) depthFound.push(`Moderate length: ${wordCount} words`);
+  else depthFound.push(`Short response: only ${wordCount} words`);
+
+  const sentences = counter.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  depthFound.push(`${sentences.length} sentence${sentences.length !== 1 ? 's' : ''} identified`);
+  if (sentences.length >= 5) depthFound.push("Multiple distinct points made");
+
+  const depthTips: string[] = [];
+  if (isWeakGrade(numberToGrade(depthScore))) {
+    depthTips.push("Aim for at least 100–150 words to develop your argument fully");
+    depthTips.push("Break your argument into 3–4 distinct points, each with its own reasoning");
+    depthTips.push("Consider addressing different angles: practical, ethical, economic, social");
+    if (sentences.length < 4) depthTips.push("Try structuring with clear topic sentences for each paragraph");
+  }
+
   const uniqueWords = new Set(counterWords.map(w => w.toLowerCase())).size;
   const lexicalRichness = wordCount > 0 ? uniqueWords / wordCount : 0;
   let vocabScore = Math.min(100, Math.floor(lexicalRichness * 100 * 1.5));
 
   const analyticalKeywords = ['however', 'furthermore', 'nevertheless', 'conversely', 'paradigm', 'empirical', 'inherent', 'bias', 'dichotomy', 'mitigate', 'variable', 'contingent', 'fallacy', 'implies', 'assumes', 'consequently'];
+  const foundKeywords: string[] = [];
+  const missingKeywords: string[] = [];
   let keywordBonus = 0;
   analyticalKeywords.forEach(keyword => {
     if (counter.toLowerCase().includes(keyword)) {
       keywordBonus += 5;
+      foundKeywords.push(keyword);
+    } else {
+      missingKeywords.push(keyword);
     }
   });
   vocabScore = Math.min(100, vocabScore + keywordBonus);
 
+  const vocabFound: string[] = [];
+  if (foundKeywords.length > 0) vocabFound.push(`Analytical terms used: ${foundKeywords.join(', ')}`);
+  vocabFound.push(`Lexical diversity: ${Math.round(lexicalRichness * 100)}% unique words`);
+
+  const vocabTips: string[] = [];
+  if (isWeakGrade(numberToGrade(vocabScore))) {
+    vocabTips.push("Use transition words like 'however', 'furthermore', 'nevertheless' to connect ideas");
+    vocabTips.push("Introduce analytical language: 'inherent bias', 'false dichotomy', 'assumes that...'");
+    if (missingKeywords.length > 3) {
+      const suggestions = missingKeywords.slice(0, 4);
+      vocabTips.push(`Try incorporating words like: ${suggestions.join(', ')}`);
+    }
+    vocabTips.push("Vary your sentence structure — mix short declarative statements with longer analytical ones");
+  }
+
   const beliefWords = new Set(belief.toLowerCase().split(/\s+/));
   let overlapCount = 0;
+  const overlappingWords: string[] = [];
   counterWords.forEach(word => {
-    if (beliefWords.has(word.toLowerCase()) && word.length > 4) {
+    const lower = word.toLowerCase();
+    if (beliefWords.has(lower) && word.length > 4) {
       overlapCount++;
+      if (!overlappingWords.includes(lower)) overlappingWords.push(lower);
     }
   });
 
@@ -73,36 +124,62 @@ export function calculateEffortScore(belief: string, counter: string): ScoreResu
     frictionScore = Math.min(100, frictionScore + 15);
   }
 
-  const researchPatterns = [
-    /\b(study|studies)\b/i,
-    /\b(research\s+(shows?|suggests?|indicates?|demonstrates?|found))\b/i,
-    /\b(according\s+to)\b/i,
-    /\b(peer[- ]reviewed)\b/i,
-    /\b(meta[- ]analy(sis|ses|tic))\b/i,
-    /\b(journal|published)\b/i,
-    /\b(university|professor|researcher)\b/i,
-    /\b(data\s+(shows?|suggests?|indicates?))\b/i,
-    /\b(evidence\s+(shows?|suggests?|indicates?))\b/i,
-    /\b(experiment(s|al)?)\b/i,
-    /\b(statistic(s|al|ally)?)\b/i,
-    /\b(survey(s|ed)?)\b/i,
-    /\b(findings?)\b/i,
-    /\b(sample\s+size)\b/i,
-    /\b(control\s+group)\b/i,
-    /\b(correlation|causation)\b/i,
-    /\(\d{4}\)/,
-    /et\s+al\./i,
+  const frictionFound: string[] = [];
+  if (overlapRatio < 0.1) frictionFound.push("Low overlap with original belief — strong independent reasoning");
+  else if (overlapRatio < 0.2) frictionFound.push("Moderate overlap with original belief");
+  else frictionFound.push(`High overlap: reused words like "${overlappingWords.slice(0, 3).join('", "')}"`);
+
+  if (wordCount > belief.split(/\s+/).length * 1.5) frictionFound.push("Counter-argument substantially longer than belief — good expansion");
+
+  const frictionTips: string[] = [];
+  if (isWeakGrade(numberToGrade(frictionScore))) {
+    frictionTips.push("Avoid repeating the same words from your original belief — reframe the concepts");
+    frictionTips.push("Introduce new frameworks or perspectives not present in your thesis");
+    frictionTips.push("Challenge the underlying assumptions, not just the surface claim");
+    frictionTips.push("Consider: what would someone with the opposite life experience say?");
+  }
+
+  const researchPatterns: [RegExp, string][] = [
+    [/\b(study|studies)\b/i, "Referenced studies"],
+    [/\b(research\s+(shows?|suggests?|indicates?|demonstrates?|found))\b/i, "Cited research findings"],
+    [/\b(according\s+to)\b/i, "Used 'according to' attribution"],
+    [/\b(peer[- ]reviewed)\b/i, "Mentioned peer review"],
+    [/\b(meta[- ]analy(sis|ses|tic))\b/i, "Referenced meta-analysis"],
+    [/\b(journal|published)\b/i, "Referenced publication/journal"],
+    [/\b(university|professor|researcher)\b/i, "Cited academic sources"],
+    [/\b(data\s+(shows?|suggests?|indicates?))\b/i, "Referenced data"],
+    [/\b(evidence\s+(shows?|suggests?|indicates?))\b/i, "Appealed to evidence"],
+    [/\b(experiment(s|al)?)\b/i, "Referenced experiments"],
+    [/\b(statistic(s|al|ally)?)\b/i, "Used statistical language"],
+    [/\b(survey(s|ed)?)\b/i, "Referenced surveys"],
+    [/\b(findings?)\b/i, "Cited findings"],
+    [/\b(sample\s+size)\b/i, "Mentioned sample size"],
+    [/\b(control\s+group)\b/i, "Referenced control groups"],
+    [/\b(correlation|causation)\b/i, "Discussed correlation/causation"],
+    [/\(\d{4}\)/i, "Included year citation"],
+    [/et\s+al\./i, "Used academic citation style (et al.)"],
   ];
 
   let researchHits = 0;
-  researchPatterns.forEach(pattern => {
+  const researchFound: string[] = [];
+  researchPatterns.forEach(([pattern, label]) => {
     if (pattern.test(counter)) {
       researchHits++;
+      researchFound.push(label);
     }
   });
 
   let researchScore = Math.min(100, researchHits * 15);
   if (researchHits === 0) researchScore = 20;
+
+  const researchTips: string[] = [];
+  if (isWeakGrade(numberToGrade(researchScore))) {
+    researchTips.push("Reference specific studies: 'Research from [field] suggests that...'");
+    researchTips.push("Mention data or statistics: 'Studies show that X% of...'");
+    researchTips.push("Appeal to evidence: 'Evidence indicates...', 'Data suggests...'");
+    researchTips.push("Distinguish correlation from causation when making claims");
+    if (researchHits === 0) researchTips.push("Even general references to research strengthen your argument significantly");
+  }
 
   if (wordCount < 10) {
     depthScore = Math.min(10, depthScore);
@@ -145,10 +222,10 @@ export function calculateEffortScore(belief: string, counter: string): ScoreResu
     grade,
     summary,
     metrics: {
-      depth: { grade: depthGrade, desc: "Complexity and length of arguments presented." },
-      friction: { grade: frictionGrade, desc: "Evidence of genuinely struggling against your own bias." },
-      vocabulary: { grade: vocabGrade, desc: "Diversity of conceptual vocabulary and analytical language." },
-      research: { grade: researchGrade, desc: "References to studies, data, peer-reviewed sources, or empirical evidence." },
+      depth: { grade: depthGrade, desc: "Complexity and length of arguments presented.", found: depthFound, tips: depthTips },
+      friction: { grade: frictionGrade, desc: "Evidence of genuinely struggling against your own bias.", found: frictionFound, tips: frictionTips },
+      vocabulary: { grade: vocabGrade, desc: "Diversity of conceptual vocabulary and analytical language.", found: vocabFound, tips: vocabTips },
+      research: { grade: researchGrade, desc: "References to studies, data, peer-reviewed sources, or empirical evidence.", found: researchFound, tips: researchTips },
     }
   };
 }
