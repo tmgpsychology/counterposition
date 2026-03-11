@@ -279,7 +279,26 @@ export default function Counterposition() {
                   />
                 </div>
 
-                <div className="pt-8">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.2, duration: 0.6 }}
+                  className="border-2 border-[#5B7B6A] rounded-md bg-[#5B7B6A]/5 p-6 space-y-3"
+                  data-testid="section-reflection"
+                >
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-[#5B7B6A]">The Point</h3>
+                  <p className="text-sm leading-relaxed text-foreground/90">
+                    You just argued against your own belief. The grade above reflects how deeply and seriously you engaged with that challenge.
+                  </p>
+                  <p className="text-sm leading-relaxed text-foreground/90">
+                    Now ask yourself: <span className="font-semibold italic">did it move you?</span>
+                  </p>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    A strong counter-argument that doesn't shift your position means your conviction has been genuinely tested. A strong one that does means you've just grown. Either outcome is a win — the only failure is not trying.
+                  </p>
+                </motion.div>
+
+                <div className="pt-4">
                   <Button 
                     onClick={handleReset}
                     className="w-full rounded-none border-2 border-foreground h-16 text-lg uppercase tracking-widest bg-transparent text-foreground hover:bg-foreground hover:text-background transition-all"
