@@ -288,13 +288,10 @@ export default function Counterposition() {
                 >
                   <h3 className="text-sm font-bold uppercase tracking-widest text-[#5B7B6A]">The Point</h3>
                   <p className="text-sm leading-relaxed text-foreground/90">
-                    You just argued against your own belief. The grade above reflects how deeply and seriously you engaged with that challenge.
+                    A strong score in Counterposition means you engaged well in the task. If after this, your original position hasn't changed much, then it's likely that your initial position is fairly durable and robust.
                   </p>
                   <p className="text-sm leading-relaxed text-foreground/90">
-                    Now ask yourself: <span className="font-semibold italic">did it move you?</span>
-                  </p>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    A strong counter-argument that doesn't shift your position means your conviction has been genuinely tested. A strong one that does means you've just grown. Either outcome is a win — the only failure is not trying.
+                    If your Counterposition score is poor, then the question begs: <span className="font-semibold italic">can it really be considered robust?</span>
                   </p>
                 </motion.div>
 
