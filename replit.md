@@ -1,6 +1,6 @@
-# Counterposition
+# Reckon
 
-A cognitive exercise web app with three tools for structured thinking and decision-making.
+A cognitive exercise web app with three tools for structured thinking and decision-making. Formerly "Counterposition".
 
 ## Pages
 

@@ -40,7 +40,7 @@ export default function Home() {
         >
           <div className="text-center pt-12 sm:pt-20 pb-12">
             <h1 className="text-5xl sm:text-6xl font-bold uppercase tracking-tighter leading-none">
-              Counter<span className="text-[#C27D60]">position</span>
+              Reckon
             </h1>
             <p className="text-lg text-muted-foreground mt-4 max-w-lg mx-auto leading-relaxed">
               Tools for thinking clearly. Challenge your beliefs, weigh your options, and untangle your reasoning.
