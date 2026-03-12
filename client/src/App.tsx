@@ -12,6 +12,7 @@ import ProsCons from "@/pages/pros-cons";
 import Unthread from "@/pages/unthread";
 import Disclaimer from "@/pages/disclaimer";
 import AuthPage from "@/pages/auth-page";
+import History from "@/pages/history";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/unthread" component={Unthread}/>
       <Route path="/terms" component={Disclaimer}/>
       <Route path="/account" component={AuthPage}/>
+      <Route path="/history" component={History}/>
       <Route component={NotFound} />
     </Switch>
   );

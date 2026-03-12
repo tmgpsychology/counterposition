@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, ArrowLeft, ArrowDown, Lightbulb, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, ArrowDown, Lightbulb, ChevronDown, ChevronUp, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 
 function generateId() {
   return Math.random().toString(36).substring(2, 9);
@@ -32,6 +33,9 @@ export default function Unthread() {
   const [tradeReflection, setTradeReflection] = useState("");
   const [linkAlternatives, setLinkAlternatives] = useState<LinkAlternatives>({});
   const [expandedLinks, setExpandedLinks] = useState<Set<string>>(new Set());
+  const [saved, setSaved] = useState(false);
+  const [showGuestPrompt, setShowGuestPrompt] = useState(false);
+  const { user } = useAuth();
 
   const handleSetQuestion = () => {
     if (question.trim().length < 5) return;
@@ -119,6 +123,24 @@ export default function Unthread() {
     }));
   };
 
+  const handleSave = () => {
+    if (!user) return;
+    fetch("/api/exercises/unthread", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question,
+        chain,
+        tradeCost,
+        tradeGain,
+        alternatives: linkAlternatives,
+      }),
+      credentials: "include",
+    }).then(res => {
+      if (res.ok) setSaved(true);
+    }).catch(() => {});
+  };
+
   const handleReset = () => {
     setQuestion("");
     setQuestionSet(false);
@@ -129,6 +151,8 @@ export default function Unthread() {
     setTradeReflection("");
     setLinkAlternatives({});
     setExpandedLinks(new Set());
+    setSaved(false);
+    setShowGuestPrompt(false);
     setPhase("question");
   };
 
@@ -551,6 +575,43 @@ export default function Unthread() {
                     The thread is unravelled. You can now see the full picture of what you need, and whether your current path is truly the only way — or just the one you haven't questioned yet.
                   </p>
                 </div>
+
+                {user && (
+                  <div className="text-center">
+                    {saved ? (
+                      <p className="text-xs text-muted-foreground" data-testid="text-saved">Saved to your history</p>
+                    ) : (
+                      <Button
+                        onClick={handleSave}
+                        variant="outline"
+                        className="rounded-md border-2 border-[#5B7B6A] text-[#5B7B6A] uppercase tracking-widest text-sm hover:bg-[#5B7B6A] hover:text-white"
+                        data-testid="button-save"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        Save to History
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {!user && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="border-2 border-[#5B7B6A]/30 rounded-md p-4 bg-[#5B7B6A]/5 text-center"
+                    data-testid="guest-prompt"
+                  >
+                    <p className="text-sm text-foreground/80 mb-2">
+                      Sign up to save your results and track your thinking over time.
+                    </p>
+                    <Link href="/account">
+                      <button className="text-xs font-medium uppercase tracking-widest text-[#5B7B6A] hover:underline" data-testid="link-guest-signup">
+                        Create an account
+                      </button>
+                    </Link>
+                  </motion.div>
+                )}
               </motion.div>
             )}
           </motion.div>

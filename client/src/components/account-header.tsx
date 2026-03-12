@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
-import { User, LogOut, ChevronDown } from "lucide-react";
+import { User, LogOut, ChevronDown, History } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function AccountHeader() {
@@ -67,6 +67,16 @@ export function AccountHeader() {
                 {user.email}
               </p>
             </div>
+            <Link href="/history">
+              <button
+                onClick={() => setMenuOpen(false)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                data-testid="link-history"
+              >
+                <History className="h-3.5 w-3.5" />
+                History
+              </button>
+            </Link>
             <LogoutButton onDone={() => setMenuOpen(false)} />
           </motion.div>
         )}

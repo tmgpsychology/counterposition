@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Minus, Trash2, ArrowLeft, Lightbulb, X } from "lucide-react";
+import { Plus, Minus, Trash2, ArrowLeft, Lightbulb, X, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 
 interface BarItem {
   id: string;
@@ -121,6 +122,9 @@ export default function ProsCons() {
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
   const [selectedBarId, setSelectedBarId] = useState<string | null>(null);
   const [selectedBarSide, setSelectedBarSide] = useState<"pro" | "con" | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [showGuestPrompt, setShowGuestPrompt] = useState(false);
+  const { user } = useAuth();
 
   const addPro = () => {
     if (!newPro.trim()) return;
@@ -199,6 +203,24 @@ export default function ProsCons() {
   const suggestions = useMemo(() => {
     return generateSuggestions(topic, pros, cons).filter(s => !dismissedSuggestions.has(s.text));
   }, [topic, pros, cons, dismissedSuggestions]);
+
+  const handleSave = () => {
+    if (!user || pros.length === 0 || cons.length === 0) return;
+    fetch("/api/exercises/weigh-it-up", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        topic,
+        pros: pros.map(p => ({ id: p.id, label: p.label, weight: p.weight })),
+        cons: cons.map(c => ({ id: c.id, label: c.label, weight: c.weight })),
+        proPercent,
+        conPercent,
+      }),
+      credentials: "include",
+    }).then(res => {
+      if (res.ok) setSaved(true);
+    }).catch(() => {});
+  };
 
   const allItems = [...pros, ...cons];
   const globalMaxWeight = allItems.length > 0 ? Math.max(...allItems.map(i => i.weight)) : 1;
@@ -442,6 +464,55 @@ export default function ProsCons() {
                 <p className="text-sm font-bold uppercase tracking-widest text-[#C27D60] mt-4">Cons</p>
               </div>
             </div>
+
+            {user && pros.length > 0 && cons.length > 0 && (
+              <div className="text-center mt-6">
+                {saved ? (
+                  <p className="text-xs text-muted-foreground" data-testid="text-saved">Saved to your history</p>
+                ) : (
+                  <Button
+                    onClick={handleSave}
+                    variant="outline"
+                    className="rounded-md border-2 border-[#5B7B6A] text-[#5B7B6A] uppercase tracking-widest text-sm hover:bg-[#5B7B6A] hover:text-white"
+                    data-testid="button-save"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Save to History
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {!user && pros.length > 0 && cons.length > 0 && !showGuestPrompt && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1 }}
+                className="text-center mt-4"
+              >
+                <button onClick={() => setShowGuestPrompt(true)} className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                  Want to save this?
+                </button>
+              </motion.div>
+            )}
+
+            {showGuestPrompt && !user && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 border-2 border-[#5B7B6A]/30 rounded-md p-4 bg-[#5B7B6A]/5 text-center"
+                data-testid="guest-prompt"
+              >
+                <p className="text-sm text-foreground/80 mb-2">
+                  Sign up to save your results and track your thinking over time.
+                </p>
+                <Link href="/account">
+                  <button className="text-xs font-medium uppercase tracking-widest text-[#5B7B6A] hover:underline" data-testid="link-guest-signup">
+                    Create an account
+                  </button>
+                </Link>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </div>
