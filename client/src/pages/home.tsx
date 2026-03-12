@@ -159,7 +159,7 @@ export default function Home() {
               Reckon <span className="text-muted-foreground/60">&</span> Sift
             </h1>
             <p className="text-base text-muted-foreground mt-4 max-w-md mx-auto leading-relaxed">
-              Tools for thinking clearly. Challenge your beliefs, weigh your options, and untangle your reasoning.
+              Tools for challenging our thinking and decisions.
             </p>
           </div>
 

@@ -148,6 +148,7 @@ export default function Unthread() {
       await apiRequest("POST", "/api/exercises/unthread", {
         question,
         chain,
+        tradeCost: question,
         tradeGain,
         alternatives: linkAlternatives,
       });

@@ -51,6 +51,7 @@ export async function registerRoutes(
   const unthreadBody = z.object({
     question: z.string().min(1),
     chain: z.array(z.any()),
+    tradeCost: z.string(),
     tradeGain: z.string(),
     alternatives: z.record(z.any()),
   });

@@ -25,7 +25,7 @@ export const counterpositionExercises = pgTable("counterposition_exercises", {
   counterArgument: text("counter_argument").notNull(),
   grade: text("grade").notNull(),
   summary: text("summary").notNull(),
-  metrics: jsonb("metrics").notNull(),
+  metrics: jsonb("metric_grades").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -40,7 +40,7 @@ export type CounterpositionExercise = typeof counterpositionExercises.$inferSele
 export const weighItUpExercises = pgTable("weigh_it_up_exercises", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
-  decision: text("decision").notNull(),
+  decision: text("topic").notNull(),
   pros: jsonb("pros").notNull(),
   cons: jsonb("cons").notNull(),
   proPercent: integer("pro_percent").notNull(),
@@ -61,6 +61,7 @@ export const unthreadExercises = pgTable("unthread_exercises", {
   userId: varchar("user_id").notNull().references(() => users.id),
   question: text("question").notNull(),
   chain: jsonb("chain").notNull(),
+  tradeCost: text("trade_cost").notNull(),
   tradeGain: text("trade_gain").notNull(),
   alternatives: jsonb("alternatives").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
