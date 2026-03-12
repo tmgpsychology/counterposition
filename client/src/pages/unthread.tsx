@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, ArrowLeft, ArrowDown, Lightbulb, ChevronDown, ChevronUp, Save } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, ArrowDown, Lightbulb, ChevronDown, ChevronUp, Save, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { GuestSignupPrompt } from "@/components/guest-signup-prompt";
 
 function generateId() {
   return Math.random().toString(36).substring(2, 9);
@@ -33,9 +35,10 @@ export default function Unthread() {
   const [tradeReflection, setTradeReflection] = useState("");
   const [linkAlternatives, setLinkAlternatives] = useState<LinkAlternatives>({});
   const [expandedLinks, setExpandedLinks] = useState<Set<string>>(new Set());
-  const [saved, setSaved] = useState(false);
-  const [showGuestPrompt, setShowGuestPrompt] = useState(false);
   const { user } = useAuth();
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [dismissedPrompt, setDismissedPrompt] = useState(false);
 
   const handleSetQuestion = () => {
     if (question.trim().length < 5) return;
@@ -123,24 +126,6 @@ export default function Unthread() {
     }));
   };
 
-  const handleSave = () => {
-    if (!user) return;
-    fetch("/api/exercises/unthread", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        question,
-        chain,
-        tradeCost,
-        tradeGain,
-        alternatives: linkAlternatives,
-      }),
-      credentials: "include",
-    }).then(res => {
-      if (res.ok) setSaved(true);
-    }).catch(() => {});
-  };
-
   const handleReset = () => {
     setQuestion("");
     setQuestionSet(false);
@@ -151,9 +136,26 @@ export default function Unthread() {
     setTradeReflection("");
     setLinkAlternatives({});
     setExpandedLinks(new Set());
-    setSaved(false);
-    setShowGuestPrompt(false);
     setPhase("question");
+    setSaved(false);
+    setSaveError("");
+    setDismissedPrompt(false);
+  };
+
+  const handleSaveExercise = async () => {
+    setSaveError("");
+    try {
+      await apiRequest("POST", "/api/exercises/unthread", {
+        question,
+        chain,
+        tradeGain,
+        alternatives: linkAlternatives,
+      });
+      setSaved(true);
+      queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
+    } catch (err: unknown) {
+      setSaveError(err instanceof Error ? err.message : "Failed to save");
+    }
   };
 
   const allReasons = chain.flatMap(link => link.reasons.filter(r => r.text.trim()).map(r => r.text));
@@ -231,98 +233,72 @@ export default function Unthread() {
         </div>
 
         <div className="text-center space-y-2">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">Unthreading</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Unthread</p>
           <h1 className="text-3xl sm:text-4xl font-bold uppercase tracking-tighter" data-testid="text-question">
-            "{question}"
+            {question}
           </h1>
-        </div>
-
-        <div className="flex justify-center gap-2 flex-wrap">
-          <button
-            onClick={() => setPhase("chain")}
-            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md border-2 transition-all ${phase === "chain" ? "bg-[#5B7B6A] text-white border-[#5B7B6A]" : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"}`}
-            data-testid="tab-chain"
-          >
-            1. The Chain
-          </button>
-          <button
-            onClick={() => chainComplete && moveToTrade()}
-            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md border-2 transition-all ${phase === "trade" ? "bg-[#5B7B6A] text-white border-[#5B7B6A]" : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"} ${!chainComplete ? "opacity-40 cursor-not-allowed" : ""}`}
-            data-testid="tab-trade"
-          >
-            2. The Trade
-          </button>
-          <button
-            onClick={() => tradeComplete && setPhase("decompose")}
-            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md border-2 transition-all ${phase === "decompose" ? "bg-[#5B7B6A] text-white border-[#5B7B6A]" : "border-muted text-muted-foreground hover:border-foreground hover:text-foreground"} ${!tradeComplete ? "opacity-40 cursor-not-allowed" : ""}`}
-            data-testid="tab-decompose"
-          >
-            3. Decompose
-          </button>
         </div>
 
         {phase === "chain" && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
           >
-            <div className="border-2 border-[#5B7B6A] rounded-md p-4 bg-[#5B7B6A]/5">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">I am currently doing this</p>
-              <p className="font-bold text-lg" data-testid="text-starting-point">{question}</p>
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-foreground text-background flex items-center justify-center text-xl font-bold rounded-md">1</div>
+              <div>
+                <h2 className="text-2xl font-bold uppercase tracking-tight">The Chain</h2>
+                <p className="text-sm text-muted-foreground">Why do you do this? Trace the reasoning.</p>
+              </div>
             </div>
 
-            <AnimatePresence>
-              {chain.map((link, index) => (
+            <div className="space-y-4">
+              {chain.map((link, linkIndex) => (
                 <motion.div
                   key={link.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-2"
                 >
-                  <div className="flex justify-center py-1">
-                    <ArrowDown className="h-5 w-5 text-muted-foreground" />
-                  </div>
+                  {linkIndex > 0 && (
+                    <div className="flex justify-center py-2">
+                      <ArrowDown className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
 
-                  <div className="border-2 border-muted rounded-md p-4 space-y-3 relative group">
-                    {chain.length > 1 && (
-                      <button
-                        onClick={() => removeChainLink(link.id)}
-                        className="absolute top-3 right-3 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
-                        data-testid={`button-remove-link-${link.id}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
+                  <div className="border-2 border-muted rounded-md p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                        {linkIndex === 0 ? "I do this because..." : "And that matters because..."}
+                      </p>
+                      {chain.length > 1 && (
+                        <button
+                          onClick={() => removeChainLink(link.id)}
+                          className="text-muted-foreground hover:text-destructive transition-colors"
+                          data-testid={`button-remove-link-${link.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
 
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                      {index === 0 ? "Because..." : "And because..."}
-                    </p>
-
-                    {link.reasons.map((reason, rIdx) => (
-                      <div key={reason.id} className="flex gap-2 items-center">
+                    {link.reasons.map((reason, reasonIndex) => (
+                      <div key={reason.id} className="flex gap-2">
                         <Input
                           value={reason.text}
                           onChange={e => updateReason(link.id, reason.id, e.target.value)}
-                          placeholder={
-                            index === 0 && rIdx === 0
-                              ? "e.g., It gives me money"
-                              : index === 0
-                              ? "e.g., It provides stability"
-                              : index === 1 && rIdx === 0
-                              ? "e.g., It lets me feel secure"
-                              : "e.g., It gives me status"
-                          }
-                          className="rounded-md border-2 border-muted h-12 flex-1"
-                          data-testid={`input-reason-${reason.id}`}
+                          placeholder={reasonIndex === 0 ? "Main reason..." : "Another reason..."}
+                          className="rounded-md border-2 border-muted h-10"
+                          data-testid={`input-reason-${link.id}-${reason.id}`}
                         />
                         {link.reasons.length > 1 && (
                           <button
                             onClick={() => removeReason(link.id, reason.id)}
-                            className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
+                            className="text-muted-foreground hover:text-destructive transition-colors px-2"
                             data-testid={`button-remove-reason-${reason.id}`}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3 w-3" />
                           </button>
                         )}
                       </div>
@@ -339,153 +315,157 @@ export default function Unthread() {
                   </div>
                 </motion.div>
               ))}
-            </AnimatePresence>
+            </div>
 
-            <div className="flex justify-center py-2">
+            <div className="flex gap-3">
               <Button
                 onClick={addChainLink}
                 variant="outline"
-                className="rounded-md border-2 border-dashed border-muted text-muted-foreground hover:border-foreground hover:text-foreground"
+                className="flex-1 rounded-md border-2 border-foreground uppercase tracking-wider text-sm"
                 data-testid="button-add-link"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add another link
+                Add Link
               </Button>
+              {chainComplete && (
+                <Button
+                  onClick={moveToTrade}
+                  className="flex-1 rounded-md uppercase tracking-wider text-sm"
+                  data-testid="button-move-to-trade"
+                >
+                  Next: The Trade
+                </Button>
+              )}
             </div>
-
-            {chainComplete && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-4"
-              >
-                <div className="flex justify-center py-1">
-                  <ArrowDown className="h-5 w-5 text-muted-foreground" />
-                </div>
-
-                <div className="flex justify-center pt-4">
-                  <Button
-                    onClick={moveToTrade}
-                    className="rounded-md h-14 px-8 uppercase tracking-widest bg-[#5B7B6A] hover:bg-[#5B7B6A]/90"
-                    data-testid="button-to-trade"
-                  >
-                    <ArrowDown className="h-5 w-5 mr-2" />
-                    Let's see what choice I'm making
-                  </Button>
-                </div>
-              </motion.div>
-            )}
           </motion.div>
         )}
 
         {phase === "trade" && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold uppercase tracking-tight">The Choice I'm Making</h2>
-              <p className="text-sm text-muted-foreground">
-                Here's the full thread of your reasoning, from what you're doing to why.
-              </p>
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-[#C27D60] text-white flex items-center justify-center text-xl font-bold rounded-md">2</div>
+              <div>
+                <h2 className="text-2xl font-bold uppercase tracking-tight">The Trade</h2>
+                <p className="text-sm text-muted-foreground">See the full picture of what you're trading.</p>
+              </div>
             </div>
 
-            <div className="space-y-0">
-              <div className="border-2 border-[#C27D60] rounded-md p-4 bg-[#C27D60]/5">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">What I'm doing</p>
-                <p className="font-bold text-lg text-[#C27D60]" data-testid="text-trade-cost">{question}</p>
-              </div>
-
-              {chain.map((link, index) => (
-                <div key={link.id}>
-                  <div className="flex justify-center py-1">
-                    <ArrowDown className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="border-2 border-muted rounded-md p-3 bg-muted/5">
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
-                      {index === 0 ? "Because" : "And because"}
-                    </p>
-                    <p className="font-medium text-sm">
-                      {link.reasons.filter(r => r.text.trim()).map(r => r.text).join(", ") || "..."}
-                    </p>
-                  </div>
+            <div className="border-2 border-muted rounded-md p-6 space-y-6">
+              <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-center">
+                <div className="text-center p-4 border-2 border-[#C27D60] rounded-md bg-[#C27D60]/5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#C27D60] mb-2">What I'm doing</p>
+                  <p className="text-sm font-medium">{tradeCost}</p>
                 </div>
-              ))}
-
-              <div className="flex justify-center py-1">
-                <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                <ArrowDown className="h-6 w-6 text-muted-foreground rotate-[-90deg]" />
+                <div className="text-center p-4 border-2 border-[#5B7B6A] rounded-md bg-[#5B7B6A]/5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#5B7B6A] mb-2">What I'm getting</p>
+                  <p className="text-sm font-medium">{tradeGain}</p>
+                </div>
               </div>
-              <div className="border-2 border-[#5B7B6A] rounded-md p-4 bg-[#5B7B6A]/5">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">What I'm getting</p>
-                <p className="font-bold text-lg text-[#5B7B6A]" data-testid="text-trade-gain">{tradeGain}</p>
+
+              <div className="border-t-2 border-muted pt-6 space-y-4">
+                <p className="text-lg font-medium text-center">
+                  Is <span className="text-[#5B7B6A] font-bold">{tradeGain || "this"}</span> worth <span className="text-[#C27D60] font-bold">{tradeCost || "that"}</span>?
+                </p>
+
+                <div className="flex justify-center gap-3">
+                  {(["yes", "no", "unsure"] as const).map(option => (
+                    <button
+                      key={option}
+                      onClick={() => setTradeVerdict(option)}
+                      className={`px-6 py-3 border-2 rounded-md text-sm font-bold uppercase tracking-widest transition-all ${
+                        tradeVerdict === option
+                          ? option === "yes" ? "border-[#5B7B6A] bg-[#5B7B6A] text-white"
+                            : option === "no" ? "border-[#C27D60] bg-[#C27D60] text-white"
+                            : "border-foreground bg-foreground text-background"
+                          : "border-muted hover:border-foreground"
+                      }`}
+                      data-testid={`button-verdict-${option}`}
+                    >
+                      {option === "yes" ? "Yes" : option === "no" ? "No" : "Not sure"}
+                    </button>
+                  ))}
+                </div>
+
+                {tradeVerdict && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-3"
+                  >
+                    <Textarea
+                      value={tradeReflection}
+                      onChange={e => setTradeReflection(e.target.value)}
+                      placeholder="Why? (optional)"
+                      className="min-h-[80px] rounded-md border-2 border-muted"
+                      data-testid="input-trade-reflection"
+                    />
+                  </motion.div>
+                )}
               </div>
             </div>
 
-            <div className="flex justify-center pt-4">
+            <div className="flex gap-3">
               <Button
-                onClick={moveToDecompose}
-                className="rounded-md h-14 px-8 uppercase tracking-widest bg-[#5B7B6A] hover:bg-[#5B7B6A]/90"
-                data-testid="button-to-decompose"
+                onClick={() => setPhase("chain")}
+                variant="outline"
+                className="rounded-md border-2 border-foreground uppercase tracking-wider text-sm"
               >
-                <Lightbulb className="h-5 w-5 mr-2" />
-                Decompose it
+                Back to Chain
               </Button>
+              {tradeComplete && (
+                <Button
+                  onClick={moveToDecompose}
+                  className="flex-1 rounded-md uppercase tracking-wider text-sm"
+                  data-testid="button-move-to-decompose"
+                >
+                  Next: Decompose
+                </Button>
+              )}
             </div>
           </motion.div>
         )}
 
         {phase === "decompose" && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold uppercase tracking-tight">Decompose The Thread</h2>
-              <p className="text-sm text-muted-foreground">
-                Each link in your chain serves a purpose. Expand any step to explore what else could serve the same one.
-              </p>
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-[#5B7B6A] text-white flex items-center justify-center text-xl font-bold rounded-md">3</div>
+              <div>
+                <h2 className="text-2xl font-bold uppercase tracking-tight">Decompose</h2>
+                <p className="text-sm text-muted-foreground">Find alternative paths to what you really need.</p>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              {chain.map((link, index) => {
-                const reasons = link.reasons.filter(r => r.text.trim());
-                const alts = linkAlternatives[link.id] || [];
+            <div className="space-y-4">
+              {chain.map((link, linkIndex) => {
                 const isExpanded = expandedLinks.has(link.id);
-                const reasonsSummary = reasons.map(r => r.text).join(", ");
+                const reasons = link.reasons.filter(r => r.text.trim()).map(r => r.text);
+
                 return (
                   <motion.div
                     key={link.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
                     className="border-2 border-muted rounded-md overflow-hidden"
-                    data-testid={`decompose-link-${link.id}`}
                   >
                     <div
-                      className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                      className="p-4 flex items-center justify-between cursor-pointer hover:bg-muted/20 transition-colors"
                       onClick={() => toggleLinkExpanded(link.id)}
+                      data-testid={`button-toggle-link-${link.id}`}
                     >
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="flex-shrink-0 w-7 h-7 rounded-md bg-[#5B7B6A] text-white flex items-center justify-center text-xs font-bold">
-                          {index + 1}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs uppercase tracking-widest text-muted-foreground">Because</p>
-                          <p className="font-bold text-sm truncate" data-testid={`text-link-reasons-${link.id}`}>
-                            {reasonsSummary || "..."}
-                          </p>
-                        </div>
-                        {alts.filter(a => a.text.trim()).length > 0 && (
-                          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#A86B4F] text-white flex items-center justify-center text-xs font-bold">
-                            {alts.filter(a => a.text.trim()).length}
-                          </div>
-                        )}
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                          {linkIndex === 0 ? "Because" : "And because"}
+                        </p>
+                        <p className="text-sm font-medium mt-1">{reasons.join(", ") || "..."}</p>
                       </div>
-                      <div className="flex-shrink-0 ml-2">
-                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </div>
+                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </div>
 
                     <AnimatePresence>
@@ -496,29 +476,24 @@ export default function Unthread() {
                           exit={{ height: 0, opacity: 0 }}
                           className="overflow-hidden"
                         >
-                          <div className="p-4 pt-0 space-y-3 border-t border-muted">
-                            <div className="bg-muted/20 rounded-md p-3 mt-3">
-                              <p className="text-xs text-muted-foreground">
-                                You said this is because: <strong className="text-foreground">{reasonsSummary || "..."}</strong>
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                What alternatives could replace this step?
-                              </p>
-                            </div>
+                          <div className="p-4 pt-0 border-t border-muted space-y-3">
+                            <p className="text-xs font-bold uppercase tracking-widest text-[#C27D60] pt-3">
+                              <Lightbulb className="h-3 w-3 inline mr-1" />
+                              What else could achieve this?
+                            </p>
 
-                            {alts.map(alt => (
-                              <div key={alt.id} className="flex gap-2 items-center">
-                                <span className="text-[#C27D60] text-sm font-bold flex-shrink-0">→</span>
+                            {(linkAlternatives[link.id] || []).map(alt => (
+                              <div key={alt.id} className="flex gap-2">
                                 <Input
                                   value={alt.text}
                                   onChange={e => updateLinkAlternative(link.id, alt.id, e.target.value)}
-                                  placeholder="e.g., Freelancing, a different role, passive income..."
-                                  className="rounded-md border-2 border-muted h-10 flex-1"
-                                  data-testid={`input-alt-${alt.id}`}
+                                  placeholder="An alternative approach..."
+                                  className="rounded-md border-2 border-muted h-10"
+                                  data-testid={`input-alt-${link.id}-${alt.id}`}
                                 />
                                 <button
                                   onClick={() => removeLinkAlternative(link.id, alt.id)}
-                                  className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
+                                  className="text-muted-foreground hover:text-destructive transition-colors px-2"
                                   data-testid={`button-remove-alt-${alt.id}`}
                                 >
                                   <Trash2 className="h-3 w-3" />
@@ -574,44 +549,38 @@ export default function Unthread() {
                   <p className="text-muted-foreground leading-relaxed pt-2">
                     The thread is unravelled. You can now see the full picture of what you need, and whether your current path is truly the only way — or just the one you haven't questioned yet.
                   </p>
-                </div>
 
-                {user && (
-                  <div className="text-center">
-                    {saved ? (
-                      <p className="text-xs text-muted-foreground" data-testid="text-saved">Saved to your history</p>
-                    ) : (
-                      <Button
-                        onClick={handleSave}
-                        variant="outline"
-                        className="rounded-md border-2 border-[#5B7B6A] text-[#5B7B6A] uppercase tracking-widest text-sm hover:bg-[#5B7B6A] hover:text-white"
-                        data-testid="button-save"
-                      >
-                        <Save className="h-4 w-4 mr-2" />
-                        Save to History
-                      </Button>
+                  {!saved && (
+                    <div className="flex justify-center pt-4">
+                      {user ? (
+                        <Button
+                          onClick={handleSaveExercise}
+                          className="rounded-md border-2 border-[#5B7B6A] bg-[#5B7B6A] text-white hover:bg-[#5B7B6A]/90 uppercase tracking-widest text-sm"
+                          data-testid="button-save-exercise"
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          Save to History
+                        </Button>
+                      ) : null}
+                    </div>
+                  )}
+                  {saved && (
+                    <div className="flex justify-center pt-4">
+                      <span className="text-sm text-[#5B7B6A] font-medium flex items-center gap-2">
+                        <Check className="h-4 w-4" /> Saved to history
+                      </span>
+                    </div>
+                  )}
+
+                  {saveError && (
+                    <p className="text-xs text-destructive text-center mt-2">{saveError}</p>
+                  )}
+                  <AnimatePresence>
+                    {!user && !saved && !dismissedPrompt && (
+                      <GuestSignupPrompt onDismiss={() => setDismissedPrompt(true)} />
                     )}
-                  </div>
-                )}
-
-                {!user && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="border-2 border-[#5B7B6A]/30 rounded-md p-4 bg-[#5B7B6A]/5 text-center"
-                    data-testid="guest-prompt"
-                  >
-                    <p className="text-sm text-foreground/80 mb-2">
-                      Sign up to save your results and track your thinking over time.
-                    </p>
-                    <Link href="/account">
-                      <button className="text-xs font-medium uppercase tracking-widest text-[#5B7B6A] hover:underline" data-testid="link-guest-signup">
-                        Create an account
-                      </button>
-                    </Link>
-                  </motion.div>
-                )}
+                  </AnimatePresence>
+                </div>
               </motion.div>
             )}
           </motion.div>

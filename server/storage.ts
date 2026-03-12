@@ -1,8 +1,9 @@
 import {
-  type User, type InsertUser, users,
-  type CounterpositionExercise, type InsertCounterposition, counterpositionExercises,
-  type WeighItUpExercise, type InsertWeighItUp, weighItUpExercises,
-  type UnthreadExercise, type InsertUnthread, unthreadExercises,
+  type User, type InsertUser,
+  type CounterpositionExercise, type InsertCounterpositionExercise,
+  type WeighItUpExercise, type InsertWeighItUpExercise,
+  type UnthreadExercise, type InsertUnthreadExercise,
+  users, counterpositionExercises, weighItUpExercises, unthreadExercises,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -12,19 +13,17 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
 
-  saveCounterposition(data: InsertCounterposition): Promise<CounterpositionExercise>;
-  saveWeighItUp(data: InsertWeighItUp): Promise<WeighItUpExercise>;
-  saveUnthread(data: InsertUnthread): Promise<UnthreadExercise>;
+  createCounterpositionExercise(exercise: InsertCounterpositionExercise): Promise<CounterpositionExercise>;
+  getCounterpositionExercise(id: string): Promise<CounterpositionExercise | undefined>;
+  getUserCounterpositionExercises(userId: string): Promise<CounterpositionExercise[]>;
 
-  getUserExercises(userId: string): Promise<{
-    counterpositions: CounterpositionExercise[];
-    weighItUps: WeighItUpExercise[];
-    unthreads: UnthreadExercise[];
-  }>;
+  createWeighItUpExercise(exercise: InsertWeighItUpExercise): Promise<WeighItUpExercise>;
+  getWeighItUpExercise(id: string): Promise<WeighItUpExercise | undefined>;
+  getUserWeighItUpExercises(userId: string): Promise<WeighItUpExercise[]>;
 
-  getCounterposition(id: string): Promise<CounterpositionExercise | undefined>;
-  getWeighItUp(id: string): Promise<WeighItUpExercise | undefined>;
-  getUnthread(id: string): Promise<UnthreadExercise | undefined>;
+  createUnthreadExercise(exercise: InsertUnthreadExercise): Promise<UnthreadExercise>;
+  getUnthreadExercise(id: string): Promise<UnthreadExercise | undefined>;
+  getUserUnthreadExercises(userId: string): Promise<UnthreadExercise[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -43,52 +42,46 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async saveCounterposition(data: InsertCounterposition): Promise<CounterpositionExercise> {
-    const [exercise] = await db.insert(counterpositionExercises).values(data).returning();
-    return exercise;
+  async createCounterpositionExercise(exercise: InsertCounterpositionExercise): Promise<CounterpositionExercise> {
+    const [result] = await db.insert(counterpositionExercises).values(exercise).returning();
+    return result;
   }
 
-  async saveWeighItUp(data: InsertWeighItUp): Promise<WeighItUpExercise> {
-    const [exercise] = await db.insert(weighItUpExercises).values(data).returning();
-    return exercise;
+  async getCounterpositionExercise(id: string): Promise<CounterpositionExercise | undefined> {
+    const [result] = await db.select().from(counterpositionExercises).where(eq(counterpositionExercises.id, id));
+    return result;
   }
 
-  async saveUnthread(data: InsertUnthread): Promise<UnthreadExercise> {
-    const [exercise] = await db.insert(unthreadExercises).values(data).returning();
-    return exercise;
+  async getUserCounterpositionExercises(userId: string): Promise<CounterpositionExercise[]> {
+    return db.select().from(counterpositionExercises).where(eq(counterpositionExercises.userId, userId)).orderBy(desc(counterpositionExercises.createdAt));
   }
 
-  async getUserExercises(userId: string) {
-    const [counterpositions, weighItUps, unthreads] = await Promise.all([
-      db.select().from(counterpositionExercises)
-        .where(eq(counterpositionExercises.userId, userId))
-        .orderBy(desc(counterpositionExercises.createdAt)),
-      db.select().from(weighItUpExercises)
-        .where(eq(weighItUpExercises.userId, userId))
-        .orderBy(desc(weighItUpExercises.createdAt)),
-      db.select().from(unthreadExercises)
-        .where(eq(unthreadExercises.userId, userId))
-        .orderBy(desc(unthreadExercises.createdAt)),
-    ]);
-    return { counterpositions, weighItUps, unthreads };
+  async createWeighItUpExercise(exercise: InsertWeighItUpExercise): Promise<WeighItUpExercise> {
+    const [result] = await db.insert(weighItUpExercises).values(exercise).returning();
+    return result;
   }
 
-  async getCounterposition(id: string): Promise<CounterpositionExercise | undefined> {
-    const [exercise] = await db.select().from(counterpositionExercises)
-      .where(eq(counterpositionExercises.id, id));
-    return exercise;
+  async getWeighItUpExercise(id: string): Promise<WeighItUpExercise | undefined> {
+    const [result] = await db.select().from(weighItUpExercises).where(eq(weighItUpExercises.id, id));
+    return result;
   }
 
-  async getWeighItUp(id: string): Promise<WeighItUpExercise | undefined> {
-    const [exercise] = await db.select().from(weighItUpExercises)
-      .where(eq(weighItUpExercises.id, id));
-    return exercise;
+  async getUserWeighItUpExercises(userId: string): Promise<WeighItUpExercise[]> {
+    return db.select().from(weighItUpExercises).where(eq(weighItUpExercises.userId, userId)).orderBy(desc(weighItUpExercises.createdAt));
   }
 
-  async getUnthread(id: string): Promise<UnthreadExercise | undefined> {
-    const [exercise] = await db.select().from(unthreadExercises)
-      .where(eq(unthreadExercises.id, id));
-    return exercise;
+  async createUnthreadExercise(exercise: InsertUnthreadExercise): Promise<UnthreadExercise> {
+    const [result] = await db.insert(unthreadExercises).values(exercise).returning();
+    return result;
+  }
+
+  async getUnthreadExercise(id: string): Promise<UnthreadExercise | undefined> {
+    const [result] = await db.select().from(unthreadExercises).where(eq(unthreadExercises.id, id));
+    return result;
+  }
+
+  async getUserUnthreadExercises(userId: string): Promise<UnthreadExercise[]> {
+    return db.select().from(unthreadExercises).where(eq(unthreadExercises.userId, userId)).orderBy(desc(unthreadExercises.createdAt));
   }
 }
 

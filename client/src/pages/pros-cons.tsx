@@ -1,10 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Minus, Trash2, ArrowLeft, Lightbulb, X, Save } from "lucide-react";
+import { Plus, Minus, Trash2, ArrowLeft, Lightbulb, X, Save, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { GuestSignupPrompt } from "@/components/guest-signup-prompt";
 
 interface BarItem {
   id: string;
@@ -122,9 +124,10 @@ export default function ProsCons() {
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
   const [selectedBarId, setSelectedBarId] = useState<string | null>(null);
   const [selectedBarSide, setSelectedBarSide] = useState<"pro" | "con" | null>(null);
-  const [saved, setSaved] = useState(false);
-  const [showGuestPrompt, setShowGuestPrompt] = useState(false);
   const { user } = useAuth();
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [dismissedPrompt, setDismissedPrompt] = useState(false);
 
   const addPro = () => {
     if (!newPro.trim()) return;
@@ -204,24 +207,6 @@ export default function ProsCons() {
     return generateSuggestions(topic, pros, cons).filter(s => !dismissedSuggestions.has(s.text));
   }, [topic, pros, cons, dismissedSuggestions]);
 
-  const handleSave = () => {
-    if (!user || pros.length === 0 || cons.length === 0) return;
-    fetch("/api/exercises/weigh-it-up", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        topic,
-        pros: pros.map(p => ({ id: p.id, label: p.label, weight: p.weight })),
-        cons: cons.map(c => ({ id: c.id, label: c.label, weight: c.weight })),
-        proPercent,
-        conPercent,
-      }),
-      credentials: "include",
-    }).then(res => {
-      if (res.ok) setSaved(true);
-    }).catch(() => {});
-  };
-
   const allItems = [...pros, ...cons];
   const globalMaxWeight = allItems.length > 0 ? Math.max(...allItems.map(i => i.weight)) : 1;
 
@@ -280,7 +265,7 @@ export default function ProsCons() {
           </Link>
           <div className="flex gap-3">
             <Button
-              onClick={() => { setTopicSet(false); setTopic(""); setPros([]); setCons([]); setDismissedSuggestions(new Set()); setShowSuggestions(false); }}
+              onClick={() => { setTopicSet(false); setTopic(""); setPros([]); setCons([]); setDismissedSuggestions(new Set()); setShowSuggestions(false); setSaved(false); setSaveError(""); setDismissedPrompt(false); }}
               variant="outline"
               className="rounded-none border-2 border-foreground uppercase tracking-wider text-sm"
               data-testid="button-reset"
@@ -438,6 +423,42 @@ export default function ProsCons() {
             className="border-t-4 border-foreground pt-8"
           >
             <h2 className="text-3xl font-bold uppercase tracking-tight text-center mb-8">The Verdict</h2>
+            {!saved && (
+              <div className="flex justify-center mb-6">
+                {user ? (
+                  <Button
+                    onClick={async () => {
+                      setSaveError("");
+                      try {
+                        await apiRequest("POST", "/api/exercises/weighitup", {
+                          decision: topic,
+                          pros: pros.map(p => ({ label: p.label, weight: p.weight })),
+                          cons: cons.map(c => ({ label: c.label, weight: c.weight })),
+                          proPercent,
+                          conPercent,
+                        });
+                        setSaved(true);
+                        queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
+                      } catch (err: unknown) {
+                        setSaveError(err instanceof Error ? err.message : "Failed to save");
+                      }
+                    }}
+                    className="rounded-md border-2 border-[#5B7B6A] bg-[#5B7B6A] text-white hover:bg-[#5B7B6A]/90 uppercase tracking-widest text-sm"
+                    data-testid="button-save-exercise"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Save to History
+                  </Button>
+                ) : null}
+              </div>
+            )}
+            {saved && (
+              <div className="flex justify-center mb-6">
+                <span className="text-sm text-[#5B7B6A] font-medium flex items-center gap-2">
+                  <Check className="h-4 w-4" /> Saved to history
+                </span>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-8">
               <div className="flex flex-col items-center">
                 <div className="flex items-center justify-center" style={{ height: maxSummaryRadius * 2 + 20 }}>
@@ -465,54 +486,14 @@ export default function ProsCons() {
               </div>
             </div>
 
-            {user && pros.length > 0 && cons.length > 0 && (
-              <div className="text-center mt-6">
-                {saved ? (
-                  <p className="text-xs text-muted-foreground" data-testid="text-saved">Saved to your history</p>
-                ) : (
-                  <Button
-                    onClick={handleSave}
-                    variant="outline"
-                    className="rounded-md border-2 border-[#5B7B6A] text-[#5B7B6A] uppercase tracking-widest text-sm hover:bg-[#5B7B6A] hover:text-white"
-                    data-testid="button-save"
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    Save to History
-                  </Button>
-                )}
-              </div>
+            {saveError && (
+              <p className="text-xs text-destructive text-center mt-2">{saveError}</p>
             )}
-
-            {!user && pros.length > 0 && cons.length > 0 && !showGuestPrompt && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1 }}
-                className="text-center mt-4"
-              >
-                <button onClick={() => setShowGuestPrompt(true)} className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors">
-                  Want to save this?
-                </button>
-              </motion.div>
-            )}
-
-            {showGuestPrompt && !user && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4 border-2 border-[#5B7B6A]/30 rounded-md p-4 bg-[#5B7B6A]/5 text-center"
-                data-testid="guest-prompt"
-              >
-                <p className="text-sm text-foreground/80 mb-2">
-                  Sign up to save your results and track your thinking over time.
-                </p>
-                <Link href="/account">
-                  <button className="text-xs font-medium uppercase tracking-widest text-[#5B7B6A] hover:underline" data-testid="link-guest-signup">
-                    Create an account
-                  </button>
-                </Link>
-              </motion.div>
-            )}
+            <AnimatePresence>
+              {!user && !saved && !dismissedPrompt && (
+                <GuestSignupPrompt onDismiss={() => setDismissedPrompt(true)} />
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </div>

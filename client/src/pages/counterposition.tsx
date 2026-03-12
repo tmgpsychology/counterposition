@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, Brain, RefreshCcw, ShieldAlert, Zap, BookOpen, Share2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { calculateEffortScore, type ScoreResult, type MetricDetail } from "@/lib/scoring";
 import { ChevronDown, CheckCircle, Lightbulb } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { GuestSignupPrompt } from "@/components/guest-signup-prompt";
 
 type Step = "belief" | "counter" | "analyzing" | "result";
 
@@ -18,10 +20,10 @@ export default function Counterposition() {
   const [score, setScore] = useState<ScoreResult | null>(null);
   const [shared, setShared] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [showGuestPrompt, setShowGuestPrompt] = useState(false);
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+  const savedRef = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -64,6 +66,25 @@ export default function Counterposition() {
     }
   };
 
+  useEffect(() => {
+    if (step === "result" && score && !savedRef.current) {
+      savedRef.current = true;
+      if (user && !shared) {
+        apiRequest("POST", "/api/exercises/counterposition", {
+          belief,
+          counterArgument,
+          grade: score.grade,
+          summary: score.summary,
+          metrics: score.metrics,
+        }).then(() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
+        }).catch(() => {});
+      } else if (!shared && !user) {
+        setShowSignupPrompt(true);
+      }
+    }
+  }, [step, score, shared]);
+
   const handleCounterSubmit = () => {
     if (counterArgument.trim().length > 10) {
       setStep("analyzing");
@@ -71,30 +92,6 @@ export default function Counterposition() {
         const result = calculateEffortScore(belief, counterArgument);
         setScore(result);
         setStep("result");
-
-        if (user) {
-          fetch("/api/exercises/counterposition", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              belief,
-              counterArgument,
-              grade: result.grade,
-              summary: result.summary,
-              metricGrades: {
-                depth: { grade: result.metrics.depth.grade, desc: result.metrics.depth.desc },
-                friction: { grade: result.metrics.friction.grade, desc: result.metrics.friction.desc },
-                vocabulary: { grade: result.metrics.vocabulary.grade, desc: result.metrics.vocabulary.desc },
-                research: { grade: result.metrics.research.grade, desc: result.metrics.research.desc },
-              },
-            }),
-            credentials: "include",
-          }).then(res => {
-            if (res.ok) setSaved(true);
-          }).catch(() => {});
-        } else {
-          setShowGuestPrompt(true);
-        }
       }, 3000);
     }
   };
@@ -106,8 +103,8 @@ export default function Counterposition() {
     setStep("belief");
     setShared(false);
     setCopied(false);
-    setSaved(false);
-    setShowGuestPrompt(false);
+    setShowSignupPrompt(false);
+    savedRef.current = false;
     if (window.location.search) {
       window.history.replaceState({}, '', '/counterposition');
     }
@@ -399,35 +396,11 @@ export default function Counterposition() {
                   </Button>
                 </div>
 
-                {saved && (
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-xs text-center text-muted-foreground mt-3"
-                    data-testid="text-saved"
-                  >
-                    Saved to your history
-                  </motion.p>
-                )}
-
-                {showGuestPrompt && !user && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="mt-4 border-2 border-[#5B7B6A]/30 rounded-md p-4 bg-[#5B7B6A]/5 text-center"
-                    data-testid="guest-prompt"
-                  >
-                    <p className="text-sm text-foreground/80 mb-2">
-                      Sign up to save your results and track your thinking over time.
-                    </p>
-                    <Link href="/account">
-                      <button className="text-xs font-medium uppercase tracking-widest text-[#5B7B6A] hover:underline" data-testid="link-guest-signup">
-                        Create an account
-                      </button>
-                    </Link>
-                  </motion.div>
-                )}
+                <AnimatePresence>
+                  {showSignupPrompt && !user && (
+                    <GuestSignupPrompt onDismiss={() => setShowSignupPrompt(false)} />
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </motion.div>

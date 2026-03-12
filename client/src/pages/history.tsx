@@ -1,291 +1,149 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Brain, Scale, Link2, Calendar, ChevronDown, ChevronUp, X } from "lucide-react";
+import { ArrowLeft, Brain, Scale, Unlink, Clock, X, ChevronDown, ChevronUp } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-
-interface BarItem {
-  id: string;
-  label: string;
-  weight: number;
-}
-
-interface ChainLink {
-  id: string;
-  reasons: { id: string; text: string }[];
-}
+import type { MetricDetail } from "@/lib/scoring";
 
 interface CounterpositionEntry {
   id: string;
+  type: "counterposition";
+  createdAt: string;
   belief: string;
   counterArgument: string;
   grade: string;
   summary: string;
-  metricGrades: Record<string, { grade: string; desc: string }>;
-  createdAt: string;
+  metrics: Record<string, MetricDetail>;
 }
 
 interface WeighItUpEntry {
   id: string;
-  topic: string;
-  pros: BarItem[];
-  cons: BarItem[];
+  type: "weighitup";
+  createdAt: string;
+  decision: string;
+  pros: { label: string; weight: number }[];
+  cons: { label: string; weight: number }[];
   proPercent: number;
   conPercent: number;
-  createdAt: string;
 }
 
 interface UnthreadEntry {
   id: string;
+  type: "unthread";
+  createdAt: string;
   question: string;
-  chain: ChainLink[];
-  tradeCost: string;
+  chain: { id: string; reasons: { id: string; text: string }[] }[];
   tradeGain: string;
   alternatives: Record<string, { id: string; text: string }[]>;
-  createdAt: string;
 }
 
-type TimelineEntry =
-  | { type: "counterposition"; data: CounterpositionEntry }
-  | { type: "weighItUp"; data: WeighItUpEntry }
-  | { type: "unthread"; data: UnthreadEntry };
+type ExerciseEntry = CounterpositionEntry | WeighItUpEntry | UnthreadEntry;
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string) {
   const d = new Date(dateStr);
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-function formatTime(dateStr: string): string {
+function formatTime(dateStr: string) {
   const d = new Date(dateStr);
   return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
-function groupByDate(entries: TimelineEntry[]): Map<string, TimelineEntry[]> {
-  const groups = new Map<string, TimelineEntry[]>();
-  for (const entry of entries) {
-    const dateKey = formatDate(entry.data.createdAt);
-    const existing = groups.get(dateKey) || [];
-    existing.push(entry);
-    groups.set(dateKey, existing);
+function groupByDate(exercises: ExerciseEntry[]) {
+  const groups: { [date: string]: ExerciseEntry[] } = {};
+  for (const ex of exercises) {
+    const key = formatDate(ex.createdAt);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(ex);
   }
   return groups;
 }
 
-export default function History() {
-  const { user, isLoading: authLoading } = useAuth();
-  const [entries, setEntries] = useState<TimelineEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    fetch("/api/exercises", { credentials: "include" })
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (!data) return;
-        const all: TimelineEntry[] = [
-          ...data.counterpositions.map((d: CounterpositionEntry) => ({ type: "counterposition" as const, data: d })),
-          ...data.weighItUps.map((d: WeighItUpEntry) => ({ type: "weighItUp" as const, data: d })),
-          ...data.unthreads.map((d: UnthreadEntry) => ({ type: "unthread" as const, data: d })),
-        ];
-        all.sort((a, b) => new Date(b.data.createdAt).getTime() - new Date(a.data.createdAt).getTime());
-        setEntries(all);
-      })
-      .finally(() => setLoading(false));
-  }, [user]);
-
-  if (authLoading) return null;
-
-  if (!user) {
-    return (
-      <div className="min-h-screen p-6 flex items-center justify-center">
-        <div className="text-center space-y-4 max-w-md">
-          <h1 className="text-3xl font-bold uppercase tracking-tight">History</h1>
-          <p className="text-muted-foreground">
-            Sign in to view your saved exercises and track your thinking over time.
-          </p>
-          <Link href="/account">
-            <button
-              className="mt-4 px-6 py-3 rounded-md text-sm font-medium uppercase tracking-widest text-white transition-all"
-              style={{ backgroundColor: "#5B7B6A" }}
-              data-testid="link-sign-in-history"
-            >
-              Sign In
-            </button>
-          </Link>
-        </div>
-      </div>
-    );
+function getToolIcon(type: string) {
+  switch (type) {
+    case "counterposition": return <Brain className="h-4 w-4" />;
+    case "weighitup": return <Scale className="h-4 w-4" />;
+    case "unthread": return <Unlink className="h-4 w-4" />;
+    default: return null;
   }
-
-  const grouped = groupByDate(entries);
-
-  return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-2xl mx-auto space-y-8">
-        <div className="flex items-center justify-between">
-          <Link href="/">
-            <button className="flex items-center gap-2 text-sm uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors" data-testid="link-back">
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </button>
-          </Link>
-        </div>
-
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-bold uppercase tracking-tighter">Your History</h1>
-          <p className="text-sm text-muted-foreground">
-            Past exercises and thinking sessions
-          </p>
-        </div>
-
-        {loading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-sm uppercase tracking-widest animate-pulse">Loading...</p>
-          </div>
-        ) : entries.length === 0 ? (
-          <div className="text-center py-12 space-y-4">
-            <p className="text-muted-foreground">No exercises saved yet.</p>
-            <p className="text-sm text-muted-foreground">
-              Complete an exercise while signed in to start building your history.
-            </p>
-            <Link href="/">
-              <button
-                className="mt-4 px-6 py-3 rounded-md text-sm font-medium uppercase tracking-widest border-2 border-foreground hover:bg-foreground hover:text-background transition-all"
-                data-testid="link-explore-tools"
-              >
-                Explore Tools
-              </button>
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {Array.from(grouped.entries()).map(([date, items]) => (
-              <div key={date} className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{date}</h2>
-                </div>
-                <div className="space-y-2">
-                  {items.map(entry => (
-                    <HistoryCard
-                      key={entry.data.id}
-                      entry={entry}
-                      isExpanded={expandedId === entry.data.id}
-                      onToggle={() => setExpandedId(expandedId === entry.data.id ? null : entry.data.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
 }
 
-function HistoryCard({ entry, isExpanded, onToggle }: { entry: TimelineEntry; isExpanded: boolean; onToggle: () => void }) {
-  const icon = entry.type === "counterposition" ? <Brain className="h-4 w-4" /> :
-               entry.type === "weighItUp" ? <Scale className="h-4 w-4" /> :
-               <Link2 className="h-4 w-4" />;
-
-  const toolName = entry.type === "counterposition" ? "Counterposition" :
-                   entry.type === "weighItUp" ? "Weigh It Up" : "Unthread";
-
-  const summary = entry.type === "counterposition" ? entry.data.belief :
-                  entry.type === "weighItUp" ? entry.data.topic :
-                  entry.data.question;
-
-  const badge = entry.type === "counterposition" ? entry.data.grade :
-                entry.type === "weighItUp" ? `${entry.data.proPercent}% / ${entry.data.conPercent}%` :
-                null;
-
-  const badgeColor = entry.type === "counterposition"
-    ? (entry.data.grade.startsWith("A") ? "text-green-600 bg-green-50" :
-       entry.data.grade.startsWith("B") ? "text-blue-600 bg-blue-50" :
-       entry.data.grade.startsWith("C") ? "text-yellow-600 bg-yellow-50" :
-       "text-red-600 bg-red-50")
-    : "text-[#5B7B6A] bg-[#5B7B6A]/10";
-
-  return (
-    <motion.div
-      layout
-      className="border-2 border-muted rounded-md bg-card overflow-hidden"
-      data-testid={`history-card-${entry.data.id}`}
-    >
-      <div
-        className="p-4 flex items-center gap-3 cursor-pointer hover:bg-muted/20 transition-colors"
-        onClick={onToggle}
-      >
-        <div className="flex-shrink-0 w-8 h-8 rounded-md bg-muted/40 flex items-center justify-center text-muted-foreground">
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{toolName}</span>
-            <span className="text-[10px] text-muted-foreground/60">{formatTime(entry.data.createdAt)}</span>
-          </div>
-          <p className="text-sm font-medium truncate mt-0.5" data-testid={`text-summary-${entry.data.id}`}>
-            {summary}
-          </p>
-        </div>
-        {badge && (
-          <span className={`text-xs font-bold px-2 py-1 rounded-md flex-shrink-0 ${badgeColor}`}>
-            {badge}
-          </span>
-        )}
-        <div className="flex-shrink-0 text-muted-foreground">
-          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-          >
-            <div className="border-t border-muted">
-              {entry.type === "counterposition" && <CounterpositionDetail data={entry.data} />}
-              {entry.type === "weighItUp" && <WeighItUpDetail data={entry.data} />}
-              {entry.type === "unthread" && <UnthreadDetail data={entry.data} />}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
+function getToolName(type: string) {
+  switch (type) {
+    case "counterposition": return "Counterposition";
+    case "weighitup": return "Weigh It Up";
+    case "unthread": return "Unthread";
+    default: return "";
+  }
 }
 
-function CounterpositionDetail({ data }: { data: CounterpositionEntry }) {
+function getToolColor(type: string) {
+  switch (type) {
+    case "counterposition": return "#5B7B6A";
+    case "weighitup": return "#C27D60";
+    case "unthread": return "#5B7B6A";
+    default: return "#888";
+  }
+}
+
+function getSummary(entry: ExerciseEntry): string {
+  switch (entry.type) {
+    case "counterposition": return entry.belief;
+    case "weighitup": return entry.decision;
+    case "unthread": return entry.question;
+  }
+}
+
+function getGradeOrVerdict(entry: ExerciseEntry): string {
+  switch (entry.type) {
+    case "counterposition": return entry.grade;
+    case "weighitup": return `${entry.proPercent}% Pro`;
+    case "unthread": return `${entry.chain?.length || 0} links`;
+  }
+}
+
+function gradeColor(grade: string) {
+  if (grade.startsWith("A")) return "text-green-500";
+  if (grade.startsWith("B")) return "text-blue-500";
+  if (grade.startsWith("C")) return "text-yellow-500";
+  return "text-red-500";
+}
+
+function CounterpositionDetail({ exercise }: { exercise: CounterpositionEntry }) {
+  const metrics = exercise.metrics;
   return (
-    <div className="p-4 space-y-4">
-      <div>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Belief</p>
-        <p className="text-sm italic border-l-4 border-[#5B7B6A] pl-3">"{data.belief}"</p>
+    <div className="space-y-4" data-testid={`detail-counterposition-${exercise.id}`}>
+      <div className="space-y-3">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Belief</p>
+          <p className="text-sm italic border-l-4 border-[#5B7B6A] pl-3">"{exercise.belief}"</p>
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Counter-argument</p>
+          <p className="text-sm italic border-l-4 border-[#C27D60] pl-3">"{exercise.counterArgument}"</p>
+        </div>
       </div>
-      <div>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Counter-argument</p>
-        <p className="text-sm italic border-l-4 border-[#C27D60] pl-3">"{data.counterArgument}"</p>
+
+      <div className="flex items-center gap-4">
+        <div className="text-center p-4 border-2 border-foreground bg-card">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Grade</p>
+          <span className={`text-4xl font-bold ${gradeColor(exercise.grade)}`}>{exercise.grade}</span>
+        </div>
+        <div className="flex-1">
+          <p className="text-sm italic text-muted-foreground">"{exercise.summary}"</p>
+        </div>
       </div>
-      <div>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Summary</p>
-        <p className="text-sm text-foreground/80">{data.summary}</p>
-      </div>
-      {data.metricGrades && (
+
+      {metrics && (
         <div className="grid grid-cols-2 gap-2">
-          {Object.entries(data.metricGrades).map(([key, val]) => (
-            <div key={key} className="bg-muted/20 rounded-md px-3 py-2">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                {key === "depth" ? "Structural Depth" :
-                 key === "friction" ? "Intellectual Friction" :
-                 key === "vocabulary" ? "Rhetorical Range" : "Research Quality"}
-              </p>
-              <p className="text-sm font-bold">{val.grade}</p>
+          {Object.entries(metrics).map(([key, metric]) => (
+            <div key={key} className="border border-muted p-3 bg-card">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold uppercase tracking-wider">{key}</span>
+                <span className={`font-bold ${gradeColor(metric.grade)}`}>{metric.grade}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">{metric.desc}</p>
             </div>
           ))}
         </div>
@@ -294,77 +152,245 @@ function CounterpositionDetail({ data }: { data: CounterpositionEntry }) {
   );
 }
 
-function WeighItUpDetail({ data }: { data: WeighItUpEntry }) {
-  const prosArr = Array.isArray(data.pros) ? data.pros as BarItem[] : [];
-  const consArr = Array.isArray(data.cons) ? data.cons as BarItem[] : [];
-
+function WeighItUpDetail({ exercise }: { exercise: WeighItUpEntry }) {
+  const pros = exercise.pros;
+  const cons = exercise.cons;
   return (
-    <div className="p-4 space-y-4">
+    <div className="space-y-4" data-testid={`detail-weighitup-${exercise.id}`}>
+      <div>
+        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Decision</p>
+        <p className="text-lg font-bold">{exercise.decision}</p>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <p className="text-xs uppercase tracking-widest text-[#5B7B6A] font-bold mb-2">Pros ({data.proPercent}%)</p>
-          <div className="space-y-1">
-            {prosArr.map((p, i) => (
-              <div key={i} className="flex items-center justify-between bg-[#5B7B6A]/5 rounded px-2 py-1.5">
-                <span className="text-xs">{p.label}</span>
-                <span className="text-xs font-bold text-[#5B7B6A]">{p.weight}</span>
-              </div>
-            ))}
-          </div>
+          <p className="text-sm font-bold uppercase tracking-wider text-[#5B7B6A] mb-2">Pros</p>
+          {pros.map((p, i) => (
+            <div key={i} className="flex justify-between items-center py-1 border-b border-muted">
+              <span className="text-sm">{p.label}</span>
+              <span className="text-xs font-bold text-[#5B7B6A]">{p.weight}</span>
+            </div>
+          ))}
         </div>
         <div>
-          <p className="text-xs uppercase tracking-widest text-[#C27D60] font-bold mb-2">Cons ({data.conPercent}%)</p>
-          <div className="space-y-1">
-            {consArr.map((c, i) => (
-              <div key={i} className="flex items-center justify-between bg-[#C27D60]/5 rounded px-2 py-1.5">
-                <span className="text-xs">{c.label}</span>
-                <span className="text-xs font-bold text-[#C27D60]">{c.weight}</span>
-              </div>
-            ))}
-          </div>
+          <p className="text-sm font-bold uppercase tracking-wider text-[#C27D60] mb-2">Cons</p>
+          {cons.map((c, i) => (
+            <div key={i} className="flex justify-between items-center py-1 border-b border-muted">
+              <span className="text-sm">{c.label}</span>
+              <span className="text-xs font-bold text-[#C27D60]">{c.weight}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex justify-center gap-8 pt-2">
+        <div className="text-center">
+          <span className="text-2xl font-bold text-[#5B7B6A]">{exercise.proPercent}%</span>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Pros</p>
+        </div>
+        <div className="text-center">
+          <span className="text-2xl font-bold text-[#C27D60]">{exercise.conPercent}%</span>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Cons</p>
         </div>
       </div>
     </div>
   );
 }
 
-function UnthreadDetail({ data }: { data: UnthreadEntry }) {
-  const chainArr = Array.isArray(data.chain) ? data.chain as ChainLink[] : [];
-  const alts = (data.alternatives && typeof data.alternatives === "object") ? data.alternatives as Record<string, { id: string; text: string }[]> : {};
-
+function UnthreadDetail({ exercise }: { exercise: UnthreadEntry }) {
+  const chain = exercise.chain;
+  const alternatives = exercise.alternatives;
   return (
-    <div className="p-4 space-y-4">
+    <div className="space-y-4" data-testid={`detail-unthread-${exercise.id}`}>
       <div>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">What you're doing</p>
-        <p className="text-sm font-bold text-[#C27D60]">{data.tradeCost}</p>
+        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Question</p>
+        <p className="text-lg font-bold">"{exercise.question}"</p>
       </div>
 
       <div className="space-y-2">
-        {chainArr.map((link, i) => {
-          const reasons = link.reasons.filter(r => r.text.trim()).map(r => r.text).join(", ");
-          const linkAlts = (alts[link.id] || []).filter(a => a.text.trim());
-          return (
-            <div key={link.id || i} className="bg-muted/20 rounded-md px-3 py-2">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                {i === 0 ? "Because" : "And because"}
-              </p>
-              <p className="text-sm font-medium">{reasons || "..."}</p>
-              {linkAlts.length > 0 && (
-                <div className="mt-1.5 space-y-0.5">
-                  <p className="text-[10px] uppercase tracking-widest text-[#C27D60]">Alternatives</p>
-                  {linkAlts.map(a => (
-                    <p key={a.id} className="text-xs text-foreground/70">→ {a.text}</p>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">Reasoning Chain</p>
+        {chain.map((link, i) => (
+          <div key={link.id} className="border-l-4 border-[#5B7B6A] pl-3 py-1">
+            <p className="text-xs text-muted-foreground">{i === 0 ? "Because" : "And because"}</p>
+            <p className="text-sm font-medium">
+              {link.reasons.filter(r => r.text.trim()).map(r => r.text).join(", ")}
+            </p>
+          </div>
+        ))}
       </div>
 
-      <div>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">What you're getting</p>
-        <p className="text-sm font-bold text-[#5B7B6A]">{data.tradeGain}</p>
+      {exercise.tradeGain && (
+        <div>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">What I'm Getting</p>
+          <p className="text-sm font-bold text-[#5B7B6A]">{exercise.tradeGain}</p>
+        </div>
+      )}
+
+      {alternatives && Object.values(alternatives).some((alts) => alts?.length > 0) && (
+        <div className="space-y-2">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Alternatives Found</p>
+          {Object.entries(alternatives).map(([linkId, alts]) => {
+            const filledAlts = alts.filter(a => a.text.trim());
+            if (filledAlts.length === 0) return null;
+            return (
+              <div key={linkId} className="pl-3 border-l-4 border-[#C27D60]">
+                {filledAlts.map(a => (
+                  <p key={a.id} className="text-sm text-muted-foreground">{a.text}</p>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function History() {
+  const { user, isLoading: authLoading } = useAuth();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const { data: exercises, isLoading } = useQuery<ExerciseEntry[]>({
+    queryKey: ["/api/exercises"],
+    enabled: !!user,
+  });
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground animate-pulse">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="text-center space-y-4 max-w-md">
+          <Clock className="h-12 w-12 text-muted-foreground mx-auto" />
+          <h1 className="text-3xl font-bold uppercase tracking-tight">Exercise History</h1>
+          <p className="text-muted-foreground">Sign in to view your exercise history and track your thinking over time.</p>
+          <Link href="/">
+            <button className="mt-4 px-6 py-3 border-2 border-foreground text-sm uppercase tracking-widest hover:bg-foreground hover:text-background transition-all" data-testid="link-back-home">
+              Back to Home
+            </button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const grouped = exercises ? groupByDate(exercises) : {};
+
+  return (
+    <div className="min-h-screen p-6">
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <Link href="/">
+            <button className="flex items-center gap-2 text-sm uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors" data-testid="link-back-home">
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </button>
+          </Link>
+        </div>
+
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl sm:text-4xl font-bold uppercase tracking-tighter" data-testid="text-history-title">
+            Your History
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Review your past exercises and see how your thinking has evolved.
+          </p>
+        </div>
+
+        {isLoading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground animate-pulse">Loading exercises...</p>
+          </div>
+        ) : !exercises || exercises.length === 0 ? (
+          <div className="text-center py-12 space-y-4">
+            <p className="text-muted-foreground">No exercises yet. Complete a tool to see your history here.</p>
+            <Link href="/">
+              <button className="px-6 py-3 border-2 border-foreground text-sm uppercase tracking-widest hover:bg-foreground hover:text-background transition-all" data-testid="button-start-exercising">
+                Start an Exercise
+              </button>
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {Object.entries(grouped).map(([date, entries]) => (
+              <div key={date}>
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3" data-testid={`text-date-${date}`}>
+                  {date}
+                </p>
+                <div className="space-y-3">
+                  {entries.map((entry) => {
+                    const isExpanded = expandedId === `${entry.type}-${entry.id}`;
+                    return (
+                      <motion.div
+                        key={`${entry.type}-${entry.id}`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="border-2 border-muted rounded-md overflow-hidden"
+                        data-testid={`card-exercise-${entry.type}-${entry.id}`}
+                      >
+                        <div
+                          className="flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                          onClick={() => setExpandedId(isExpanded ? null : `${entry.type}-${entry.id}`)}
+                          data-testid={`button-expand-${entry.type}-${entry.id}`}
+                        >
+                          <div
+                            className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: getToolColor(entry.type), opacity: 0.85 }}
+                          >
+                            <span className="text-white">{getToolIcon(entry.type)}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: getToolColor(entry.type) }}>
+                                {getToolName(entry.type)}
+                              </span>
+                              <span className="text-xs text-muted-foreground">{formatTime(entry.createdAt)}</span>
+                            </div>
+                            <p className="text-sm font-medium truncate mt-0.5" data-testid={`text-summary-${entry.type}-${entry.id}`}>
+                              {getSummary(entry)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className={`text-sm font-bold ${entry.type === "counterposition" ? gradeColor(entry.grade) : "text-foreground"}`}>
+                              {getGradeOrVerdict(entry)}
+                            </span>
+                            {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                          </div>
+                        </div>
+
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.3 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="p-4 pt-0 border-t border-muted">
+                                <div className="pt-4">
+                                  {entry.type === "counterposition" && <CounterpositionDetail exercise={entry} />}
+                                  {entry.type === "weighitup" && <WeighItUpDetail exercise={entry} />}
+                                  {entry.type === "unthread" && <UnthreadDetail exercise={entry} />}
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

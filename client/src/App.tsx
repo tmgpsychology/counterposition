@@ -21,6 +21,7 @@ function Router() {
       <Route path="/counterposition" component={Counterposition}/>
       <Route path="/weigh-it-up" component={ProsCons}/>
       <Route path="/unthread" component={Unthread}/>
+      <Route path="/history" component={History}/>
       <Route path="/terms" component={Disclaimer}/>
       <Route path="/account" component={AuthPage}/>
       <Route path="/history" component={History}/>

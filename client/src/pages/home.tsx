@@ -1,6 +1,10 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Brain, Scale, Unlink, Lightbulb } from "lucide-react";
+import { ArrowRight, Brain, Scale, Unlink, Lightbulb, Clock, User, LogOut } from "lucide-react";
 import { Link } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const tools = [
   {
@@ -33,9 +37,117 @@ const tools = [
 ];
 
 export default function Home() {
+  const { user, login, signup, logout, isLoading } = useAuth();
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+
+  const handleAuth = async () => {
+    if (!email.trim() || !password.trim()) return;
+    setAuthLoading(true);
+    setAuthError("");
+    try {
+      if (authMode === "signup") await signup(email, password);
+      else await login(email, password);
+      setShowAuth(false);
+      setEmail("");
+      setPassword("");
+    } catch (err: unknown) {
+      setAuthError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen p-6 flex flex-col">
       <div className="max-w-2xl mx-auto w-full flex-1 flex flex-col">
+        <div className="flex justify-end gap-2 pt-2">
+          {user ? (
+            <>
+              <Link href="/history">
+                <button className="flex items-center gap-1.5 text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors px-3 py-2" data-testid="link-history">
+                  <Clock className="h-3.5 w-3.5" />
+                  History
+                </button>
+              </Link>
+              <button
+                onClick={() => logout()}
+                className="flex items-center gap-1.5 text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors px-3 py-2"
+                data-testid="button-logout"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                {user.email}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => { setShowAuth(!showAuth); setAuthError(""); }}
+              className="flex items-center gap-1.5 text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors px-3 py-2"
+              data-testid="button-show-auth"
+            >
+              <User className="h-3.5 w-3.5" />
+              Sign In
+            </button>
+          )}
+        </div>
+
+        {showAuth && !user && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="border-2 border-muted rounded-md p-4 mb-4 max-w-sm ml-auto"
+            data-testid="auth-form-home"
+          >
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => { setAuthMode("login"); setAuthError(""); }}
+                className={`text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-md ${authMode === "login" ? "bg-foreground text-background" : "text-muted-foreground"}`}
+                data-testid="tab-login"
+              >
+                Log In
+              </button>
+              <button
+                onClick={() => { setAuthMode("signup"); setAuthError(""); }}
+                className={`text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-md ${authMode === "signup" ? "bg-foreground text-background" : "text-muted-foreground"}`}
+                data-testid="tab-signup"
+              >
+                Sign Up
+              </button>
+            </div>
+            <div className="space-y-2">
+              <Input
+                placeholder="Email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="rounded-md border-2 border-muted h-9 text-sm"
+                data-testid="input-auth-email"
+              />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="rounded-md border-2 border-muted h-9 text-sm"
+                onKeyDown={e => e.key === "Enter" && handleAuth()}
+                data-testid="input-auth-password"
+              />
+              {authError && <p className="text-xs text-destructive">{authError}</p>}
+              <Button
+                onClick={handleAuth}
+                disabled={authLoading || !email.trim() || !password.trim()}
+                className="w-full rounded-md h-9 text-xs uppercase tracking-widest"
+                data-testid="button-auth-submit"
+              >
+                {authLoading ? "..." : authMode === "signup" ? "Create Account" : "Log In"}
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import crypto from "crypto";
+import { z } from "zod";
 
 const shareStore = new Map<string, { b: string; c: string }>();
 
@@ -31,97 +32,100 @@ export async function registerRoutes(
     res.json(data);
   });
 
+  const counterpositionBody = z.object({
+    belief: z.string().min(1),
+    counterArgument: z.string().min(1),
+    grade: z.string().min(1),
+    summary: z.string().min(1),
+    metrics: z.record(z.any()),
+  });
+
+  const weighItUpBody = z.object({
+    decision: z.string().min(1),
+    pros: z.array(z.object({ label: z.string(), weight: z.number() })),
+    cons: z.array(z.object({ label: z.string(), weight: z.number() })),
+    proPercent: z.number().int().min(0).max(100),
+    conPercent: z.number().int().min(0).max(100),
+  });
+
+  const unthreadBody = z.object({
+    question: z.string().min(1),
+    chain: z.array(z.any()),
+    tradeGain: z.string(),
+    alternatives: z.record(z.any()),
+  });
+
   app.post("/api/exercises/counterposition", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+    const parsed = counterpositionBody.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: "Invalid data" });
     try {
-      const { belief, counterArgument, grade, summary, metricGrades } = req.body;
-      if (!belief || !counterArgument || !grade || !summary || !metricGrades) {
-        return res.status(400).json({ message: "Missing required fields" });
-      }
-      const exercise = await storage.saveCounterposition({
+      const exercise = await storage.createCounterpositionExercise({
         userId: req.user!.id,
-        belief,
-        counterArgument,
-        grade,
-        summary,
-        metricGrades,
+        ...parsed.data,
       });
       res.json(exercise);
     } catch (err) {
-      console.error("Failed to save counterposition:", err);
       res.status(500).json({ message: "Failed to save exercise" });
     }
   });
 
-  app.post("/api/exercises/weigh-it-up", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+  app.post("/api/exercises/weighitup", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+    const parsed = weighItUpBody.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: "Invalid data" });
     try {
-      const { topic, pros, cons, proPercent, conPercent } = req.body;
-      if (!topic || !pros || !cons || proPercent === undefined || conPercent === undefined) {
-        return res.status(400).json({ message: "Missing required fields" });
-      }
-      const exercise = await storage.saveWeighItUp({
+      const exercise = await storage.createWeighItUpExercise({
         userId: req.user!.id,
-        topic,
-        pros,
-        cons,
-        proPercent,
-        conPercent,
+        ...parsed.data,
       });
       res.json(exercise);
     } catch (err) {
-      console.error("Failed to save weigh-it-up:", err);
       res.status(500).json({ message: "Failed to save exercise" });
     }
   });
 
   app.post("/api/exercises/unthread", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+    const parsed = unthreadBody.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: "Invalid data" });
     try {
-      const { question, chain, tradeCost, tradeGain, alternatives } = req.body;
-      if (!question || !chain || !tradeCost || !tradeGain || !alternatives) {
-        return res.status(400).json({ message: "Missing required fields" });
-      }
-      const exercise = await storage.saveUnthread({
+      const exercise = await storage.createUnthreadExercise({
         userId: req.user!.id,
-        question,
-        chain,
-        tradeCost,
-        tradeGain,
-        alternatives,
+        ...parsed.data,
       });
       res.json(exercise);
     } catch (err) {
-      console.error("Failed to save unthread:", err);
       res.status(500).json({ message: "Failed to save exercise" });
     }
   });
 
   app.get("/api/exercises", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
     try {
-      const exercises = await storage.getUserExercises(req.user!.id);
-      res.json(exercises);
+      const userId = req.user!.id;
+      const [counterpositions, weighItUps, unthreads] = await Promise.all([
+        storage.getUserCounterpositionExercises(userId),
+        storage.getUserWeighItUpExercises(userId),
+        storage.getUserUnthreadExercises(userId),
+      ]);
+
+      const all = [
+        ...counterpositions.map(e => ({ ...e, type: "counterposition" as const })),
+        ...weighItUps.map(e => ({ ...e, type: "weighitup" as const })),
+        ...unthreads.map(e => ({ ...e, type: "unthread" as const })),
+      ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      res.json(all);
     } catch (err) {
-      console.error("Failed to fetch exercises:", err);
       res.status(500).json({ message: "Failed to fetch exercises" });
     }
   });
 
   app.get("/api/exercises/counterposition/:id", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
     try {
-      const exercise = await storage.getCounterposition(req.params.id);
+      const exercise = await storage.getCounterpositionExercise(req.params.id);
       if (!exercise || exercise.userId !== req.user!.id) {
         return res.status(404).json({ message: "Not found" });
       }
@@ -131,12 +135,10 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/exercises/weigh-it-up/:id", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+  app.get("/api/exercises/weighitup/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
     try {
-      const exercise = await storage.getWeighItUp(req.params.id);
+      const exercise = await storage.getWeighItUpExercise(req.params.id);
       if (!exercise || exercise.userId !== req.user!.id) {
         return res.status(404).json({ message: "Not found" });
       }
@@ -147,11 +149,9 @@ export async function registerRoutes(
   });
 
   app.get("/api/exercises/unthread/:id", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
     try {
-      const exercise = await storage.getUnthread(req.params.id);
+      const exercise = await storage.getUnthreadExercise(req.params.id);
       if (!exercise || exercise.userId !== req.user!.id) {
         return res.status(404).json({ message: "Not found" });
       }
