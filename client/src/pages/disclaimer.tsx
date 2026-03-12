@@ -68,7 +68,10 @@ export default function Disclaimer() {
               <h2 className="text-lg font-bold uppercase tracking-wider">4. Data Handling</h2>
               <div className="border-l-4 border-[#5B7B6A] pl-4 space-y-2">
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  Information entered into Reckon & Sift is processed in real time and is not stored, saved, or retained beyond the duration of your active session. Once you leave or refresh the page, all data you have entered is permanently discarded.
+                  <span className="font-medium text-foreground">Guest users:</span> Information entered into Reckon & Sift is processed in real time and is not stored, saved, or retained beyond the duration of your active session. Once you leave or refresh the page, all data you have entered is permanently discarded.
+                </p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  <span className="font-medium text-foreground">Account holders:</span> If you create an account, your exercise history (including inputs, results, and scores) may be stored in our database so that you can return to your past exercises. Your email address and a securely hashed password are stored for authentication purposes.
                 </p>
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   Notwithstanding the above, users should exercise caution and avoid entering information they would not be comfortable sharing in a non-secure environment.
