@@ -1,4 +1,4 @@
-# Reckon
+# Reckon & Sift
 
 A cognitive exercise web app with three tools for structured thinking and decision-making. Formerly "Counterposition".
 

@@ -44,7 +44,7 @@ export default function Home() {
         >
           <div className="text-center pt-12 sm:pt-20 pb-10">
             <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight leading-none text-foreground/90">
-              Reckon
+              Reckon <span className="text-muted-foreground/60">&</span> Sift
             </h1>
             <p className="text-base text-muted-foreground mt-4 max-w-md mx-auto leading-relaxed">
               Tools for thinking clearly. Challenge your beliefs, weigh your options, and untangle your reasoning.
