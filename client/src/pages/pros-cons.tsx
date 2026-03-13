@@ -507,100 +507,106 @@ export default function ProsCons() {
           <h1 className="text-4xl sm:text-5xl font-bold uppercase tracking-tighter" data-testid="text-topic">{topic}</h1>
         </div>
 
-        <div className="flex gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold uppercase tracking-wider text-[#81B29A] border-b-2 border-[#81B29A] pb-2">Pros</h2>
-                <div className="flex gap-2">
-                  <Input
-                    value={newPro}
-                    onChange={e => setNewPro(e.target.value)}
-                    placeholder="Add a pro..."
-                    className="rounded-none border-2 border-muted h-12"
-                    onKeyDown={e => e.key === "Enter" && addPro()}
-                    data-testid="input-add-pro"
-                  />
-                  <Button onClick={addPro} className="rounded-none border-2 border-foreground h-12 px-4" data-testid="button-add-pro">
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </div>
-                <BarChart
-                  items={pros}
-                  color="pro"
-                  globalMax={globalMaxWeight}
-                  selectedId={selectedBarId}
-                  onSelect={(id) => selectBar(id, "pro")}
-                  onRemove={removePro}
-                  onRename={(id, label) => updateItemLabel(id, label, "pro")}
-                  emptyText="No pros yet"
-                />
-                <NudgeList nudges={nudges} side="pro" onToggle={toggleNudge} />
-              </div>
-
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold uppercase tracking-wider text-[#E07A5F] border-b-2 border-[#F2CC8F] pb-2">Cons</h2>
-                <div className="flex gap-2">
-                  <Input
-                    value={newCon}
-                    onChange={e => setNewCon(e.target.value)}
-                    placeholder="Add a con..."
-                    className="rounded-none border-2 border-muted h-12"
-                    onKeyDown={e => e.key === "Enter" && addCon()}
-                    data-testid="input-add-con"
-                  />
-                  <Button onClick={addCon} className="rounded-none border-2 border-foreground h-12 px-4" data-testid="button-add-con">
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </div>
-                <BarChart
-                  items={cons}
-                  color="con"
-                  globalMax={globalMaxWeight}
-                  selectedId={selectedBarId}
-                  onSelect={(id) => selectBar(id, "con")}
-                  onRemove={removeCon}
-                  onRename={(id, label) => updateItemLabel(id, label, "con")}
-                  emptyText="No cons yet"
-                />
-                <NudgeList nudges={nudges} side="con" onToggle={toggleNudge} />
-              </div>
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold uppercase tracking-wider text-[#81B29A] border-b-2 border-[#81B29A] pb-2">Pros</h2>
+            <div className="flex gap-2">
+              <Input
+                value={newPro}
+                onChange={e => setNewPro(e.target.value)}
+                placeholder="Add a pro..."
+                className="rounded-none border-2 border-muted h-12"
+                onKeyDown={e => e.key === "Enter" && addPro()}
+                data-testid="input-add-pro"
+              />
+              <Button onClick={addPro} className="rounded-none border-2 border-foreground h-12 px-4" data-testid="button-add-pro">
+                <Plus className="h-5 w-5" />
+              </Button>
             </div>
+            <BarChart
+              items={pros}
+              color="pro"
+              globalMax={globalMaxWeight}
+              selectedId={selectedBarId}
+              onSelect={(id) => selectBar(id, "pro")}
+              onRemove={removePro}
+              onRename={(id, label) => updateItemLabel(id, label, "pro")}
+              emptyText="No pros yet"
+            />
+            <NudgeList nudges={nudges} side="pro" onToggle={toggleNudge} />
           </div>
 
-          {(pros.length > 0 || cons.length > 0) && (
-            <div className="flex flex-col items-center justify-center gap-3 border-2 border-muted bg-muted/20 rounded-lg px-3 py-4 self-start sticky top-4">
-              <button
-                onClick={increaseSelected}
-                disabled={!selectedItem || selectedItem.weight >= 20}
-                className="w-10 h-10 rounded-md border-2 border-foreground flex items-center justify-center font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground hover:text-background transition-colors"
-                data-testid="button-global-increase"
-              >
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold uppercase tracking-wider text-[#E07A5F] border-b-2 border-[#F2CC8F] pb-2">Cons</h2>
+            <div className="flex gap-2">
+              <Input
+                value={newCon}
+                onChange={e => setNewCon(e.target.value)}
+                placeholder="Add a con..."
+                className="rounded-none border-2 border-muted h-12"
+                onKeyDown={e => e.key === "Enter" && addCon()}
+                data-testid="input-add-con"
+              />
+              <Button onClick={addCon} className="rounded-none border-2 border-foreground h-12 px-4" data-testid="button-add-con">
                 <Plus className="h-5 w-5" />
-              </button>
-              <div className="text-center min-w-[48px]">
-                {selectedItem ? (
-                  <div>
-                    <p className={`text-[9px] font-bold uppercase tracking-widest leading-tight ${selectedBarSide === "pro" ? "text-[#81B29A]" : "text-[#E07A5F]"}`}>
-                      {selectedItem.label}
-                    </p>
-                    <p className="text-xl font-bold">{selectedItem.weight}</p>
-                  </div>
-                ) : (
-                  <p className="text-[9px] text-muted-foreground uppercase tracking-widest leading-tight">Tap a<br/>bar</p>
-                )}
-              </div>
+              </Button>
+            </div>
+            <BarChart
+              items={cons}
+              color="con"
+              globalMax={globalMaxWeight}
+              selectedId={selectedBarId}
+              onSelect={(id) => selectBar(id, "con")}
+              onRemove={removeCon}
+              onRename={(id, label) => updateItemLabel(id, label, "con")}
+              emptyText="No cons yet"
+            />
+            <NudgeList nudges={nudges} side="con" onToggle={toggleNudge} />
+          </div>
+        </div>
+
+        <AnimatePresence>
+          {selectedItem && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-4 border-2 border-muted bg-[#F4F1DE] shadow-lg rounded-full px-5 py-3"
+              data-testid="weight-control-bar"
+            >
               <button
                 onClick={decreaseSelected}
-                disabled={!selectedItem || selectedItem.weight <= 1}
-                className="w-10 h-10 rounded-md border-2 border-foreground flex items-center justify-center font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground hover:text-background transition-colors"
+                disabled={selectedItem.weight <= 1}
+                className="w-9 h-9 rounded-full border-2 border-foreground flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground hover:text-background transition-colors"
                 data-testid="button-global-decrease"
               >
-                <Minus className="h-5 w-5" />
+                <Minus className="h-4 w-4" />
               </button>
-            </div>
+              <div className="text-center min-w-[80px]">
+                <p className={`text-[10px] font-bold uppercase tracking-widest leading-tight truncate max-w-[120px] ${selectedBarSide === "pro" ? "text-[#81B29A]" : "text-[#E07A5F]"}`}>
+                  {selectedItem.label}
+                </p>
+                <p className="text-2xl font-bold leading-none mt-0.5">{selectedItem.weight}</p>
+              </div>
+              <button
+                onClick={increaseSelected}
+                disabled={selectedItem.weight >= 20}
+                className="w-9 h-9 rounded-full border-2 border-foreground flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground hover:text-background transition-colors"
+                data-testid="button-global-increase"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => { setSelectedBarId(null); setSelectedBarSide(null); }}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="button-dismiss-weight-control"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
 
         {suggestions.length > 0 && (
           <div className="space-y-4">
