@@ -51,14 +51,13 @@ Professional disclaimer covering AI usage, data handling, and limitation of liab
 - Guest users see a subtle prompt after completing an exercise suggesting they sign up to save results
 - History page at `/history` shows all saved exercises in a timeline
 
-## Design — "Sage & Walnut" Theme
-- Background: `#F7F6F3` (soft warm white)
-- Card/surface: `#EEEAE4` (light warm sand)
-- Text: `#33312E` (dark walnut)
-- Muted text: `#7D7871` (warm stone)
-- Borders: `#D1CCC5` (light stone)
-- Primary accent / Pro color: `#5B7B6A` (muted sage green)
-- Secondary accent / Con color: `#C27D60` (warm clay)
+## Design — "Cream & Sage" Theme
+- Background: `#F4F1DE` (cream)
+- Card/surface: slightly darker cream
+- Text: `#3D405B` (dark slate)
+- Primary accent / Pro color: `#81B29A` (sage green)
+- Secondary accent / Con color: `#E07A5F` (terra cotta)
+- Warm accent: `#F2CC8F` (sand)
 - Rounded corners (`rounded-md`, 0.5rem radius)
 - Uppercase tracking-widest labels throughout
 
@@ -67,7 +66,7 @@ Professional disclaimer covering AI usage, data handling, and limitation of liab
 - **Backend**: Express.js (serves API + static files)
 - **Database**: PostgreSQL with Drizzle ORM
 - **Auth**: Passport.js (local strategy), express-session, connect-pg-simple
-- **Fonts**: Space Grotesk + Inter
+- **Fonts**: DM Sans + Inter
 - **Scoring**: Entirely client-side for Counterposition
 - **Deployment**: Autoscale on Replit, subdomain: counterposition.replit.app
 
@@ -75,7 +74,7 @@ Professional disclaimer covering AI usage, data handling, and limitation of liab
 - `users` — id, email, password, created_at
 - `counterposition_exercises` — id, user_id, belief, counter_argument, grade, summary, metrics (jsonb), created_at
 - `weigh_it_up_exercises` — id, user_id, decision, pros (jsonb), cons (jsonb), pro_percent, con_percent, created_at
-- `unthread_exercises` — id, user_id, question, chain (jsonb), trade_gain, alternatives (jsonb), created_at
+- `unthread_exercises` — id, user_id, question, chain (jsonb), trade_cost, trade_gain, alternatives (jsonb), created_at
 
 ## Key Files
 - `client/src/pages/home.tsx` — Hub landing page

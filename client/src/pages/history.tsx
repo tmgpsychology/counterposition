@@ -80,9 +80,9 @@ function getToolName(type: string) {
 
 function getToolColor(type: string) {
   switch (type) {
-    case "counterposition": return "#5B7B6A";
-    case "weighitup": return "#C27D60";
-    case "unthread": return "#5B7B6A";
+    case "counterposition": return "#81B29A";
+    case "weighitup": return "#E07A5F";
+    case "unthread": return "#81B29A";
     default: return "#888";
   }
 }
@@ -117,11 +117,11 @@ function CounterpositionDetail({ exercise }: { exercise: CounterpositionEntry })
       <div className="space-y-3">
         <div>
           <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Belief</p>
-          <p className="text-sm italic border-l-4 border-[#5B7B6A] pl-3">"{exercise.belief}"</p>
+          <p className="text-sm italic border-l-4 border-[#81B29A] pl-3">"{exercise.belief}"</p>
         </div>
         <div>
           <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Counter-argument</p>
-          <p className="text-sm italic border-l-4 border-[#C27D60] pl-3">"{exercise.counterArgument}"</p>
+          <p className="text-sm italic border-l-4 border-[#E07A5F] pl-3">"{exercise.counterArgument}"</p>
         </div>
       </div>
 
@@ -164,20 +164,20 @@ function WeighItUpDetail({ exercise }: { exercise: WeighItUpEntry }) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <p className="text-sm font-bold uppercase tracking-wider text-[#5B7B6A] mb-2">Pros</p>
+          <p className="text-sm font-bold uppercase tracking-wider text-[#81B29A] mb-2">Pros</p>
           {pros.map((p, i) => (
             <div key={i} className="flex justify-between items-center py-1 border-b border-muted">
               <span className="text-sm">{p.label}</span>
-              <span className="text-xs font-bold text-[#5B7B6A]">{p.weight}</span>
+              <span className="text-xs font-bold text-[#81B29A]">{p.weight}</span>
             </div>
           ))}
         </div>
         <div>
-          <p className="text-sm font-bold uppercase tracking-wider text-[#C27D60] mb-2">Cons</p>
+          <p className="text-sm font-bold uppercase tracking-wider text-[#E07A5F] mb-2">Cons</p>
           {cons.map((c, i) => (
             <div key={i} className="flex justify-between items-center py-1 border-b border-muted">
               <span className="text-sm">{c.label}</span>
-              <span className="text-xs font-bold text-[#C27D60]">{c.weight}</span>
+              <span className="text-xs font-bold text-[#E07A5F]">{c.weight}</span>
             </div>
           ))}
         </div>
@@ -185,11 +185,11 @@ function WeighItUpDetail({ exercise }: { exercise: WeighItUpEntry }) {
 
       <div className="flex justify-center gap-8 pt-2">
         <div className="text-center">
-          <span className="text-2xl font-bold text-[#5B7B6A]">{exercise.proPercent}%</span>
+          <span className="text-2xl font-bold text-[#81B29A]">{exercise.proPercent}%</span>
           <p className="text-xs uppercase tracking-widest text-muted-foreground">Pros</p>
         </div>
         <div className="text-center">
-          <span className="text-2xl font-bold text-[#C27D60]">{exercise.conPercent}%</span>
+          <span className="text-2xl font-bold text-[#E07A5F]">{exercise.conPercent}%</span>
           <p className="text-xs uppercase tracking-widest text-muted-foreground">Cons</p>
         </div>
       </div>
@@ -210,7 +210,7 @@ function UnthreadDetail({ exercise }: { exercise: UnthreadEntry }) {
       <div className="space-y-2">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Reasoning Chain</p>
         {chain.map((link, i) => (
-          <div key={link.id} className="border-l-4 border-[#5B7B6A] pl-3 py-1">
+          <div key={link.id} className="border-l-4 border-[#81B29A] pl-3 py-1">
             <p className="text-xs text-muted-foreground">{i === 0 ? "Because" : "And because"}</p>
             <p className="text-sm font-medium">
               {link.reasons.filter(r => r.text.trim()).map(r => r.text).join(", ")}
@@ -222,7 +222,7 @@ function UnthreadDetail({ exercise }: { exercise: UnthreadEntry }) {
       {exercise.tradeGain && (
         <div>
           <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">What I'm Getting</p>
-          <p className="text-sm font-bold text-[#5B7B6A]">{exercise.tradeGain}</p>
+          <p className="text-sm font-bold text-[#81B29A]">{exercise.tradeGain}</p>
         </div>
       )}
 
@@ -233,7 +233,7 @@ function UnthreadDetail({ exercise }: { exercise: UnthreadEntry }) {
             const filledAlts = alts.filter(a => a.text.trim());
             if (filledAlts.length === 0) return null;
             return (
-              <div key={linkId} className="pl-3 border-l-4 border-[#C27D60]">
+              <div key={linkId} className="pl-3 border-l-4 border-[#E07A5F]">
                 {filledAlts.map(a => (
                   <p key={a.id} className="text-sm text-muted-foreground">{a.text}</p>
                 ))}

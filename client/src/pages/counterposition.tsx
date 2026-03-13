@@ -300,11 +300,11 @@ export default function Counterposition() {
                 <div className="space-y-2">
                   <div>
                     <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Original belief</p>
-                    <p className="text-sm italic border-l-4 border-[#5B7B6A] pl-3">"{belief}"</p>
+                    <p className="text-sm italic border-l-4 border-[#81B29A] pl-3">"{belief}"</p>
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Counter-argument</p>
-                    <p className="text-sm italic border-l-4 border-[#C27D60] pl-3">"{counterArgument}"</p>
+                    <p className="text-sm italic border-l-4 border-[#E07A5F] pl-3">"{counterArgument}"</p>
                   </div>
                 </div>
               </div>
@@ -366,10 +366,10 @@ export default function Counterposition() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1.2, duration: 0.6 }}
-                  className="border-2 border-[#5B7B6A] rounded-md bg-[#5B7B6A]/5 p-6 space-y-3"
+                  className="border-2 border-[#81B29A] rounded-md bg-[#81B29A]/5 p-6 space-y-3"
                   data-testid="section-reflection"
                 >
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-[#5B7B6A]">The Point</h3>
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-[#81B29A]">The Point</h3>
                   <p className="text-sm leading-relaxed text-foreground/90">
                     A strong score in Counterposition means you engaged well in the task. If after this, your original position hasn't changed much, then it's likely that your initial position is fairly durable and robust.
                   </p>
@@ -381,7 +381,7 @@ export default function Counterposition() {
                 <div className="pt-4 flex gap-3">
                   <Button 
                     onClick={handleShare}
-                    className="flex-1 rounded-none border-2 border-[#5B7B6A] h-16 text-lg uppercase tracking-widest bg-[#5B7B6A] text-white hover:bg-[#5B7B6A]/90 transition-all"
+                    className="flex-1 rounded-none border-2 border-[#81B29A] h-16 text-lg uppercase tracking-widest bg-[#81B29A] text-white hover:bg-[#81B29A]/90 transition-all"
                     data-testid="button-share"
                   >
                     {copied ? <Check className="mr-3 h-5 w-5" /> : <Share2 className="mr-3 h-5 w-5" />}
@@ -417,7 +417,7 @@ function MetricCard({ title, icon, metric }: { title: string, icon: React.ReactN
 
   return (
     <div
-      className="border-2 border-muted bg-card cursor-pointer transition-all hover:border-[#5B7B6A]/40"
+      className="border-2 border-muted bg-card cursor-pointer transition-all hover:border-[#81B29A]/40"
       onClick={() => setExpanded(!expanded)}
       data-testid={`card-metric-${title.toLowerCase().replace(/\s+/g, '-')}`}
     >
@@ -452,10 +452,10 @@ function MetricCard({ title, icon, metric }: { title: string, icon: React.ReactN
             <div className="px-4 pb-4 space-y-3 border-t border-muted pt-3">
               {metric.found.length > 0 && (
                 <div className="space-y-1.5">
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#5B7B6A]">What we found</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#81B29A]">What we found</p>
                   {metric.found.map((item, i) => (
                     <div key={i} className="flex items-start gap-2">
-                      <CheckCircle className="h-3.5 w-3.5 text-[#5B7B6A] mt-0.5 flex-shrink-0" />
+                      <CheckCircle className="h-3.5 w-3.5 text-[#81B29A] mt-0.5 flex-shrink-0" />
                       <p className="text-xs text-foreground/80">{item}</p>
                     </div>
                   ))}
@@ -464,10 +464,10 @@ function MetricCard({ title, icon, metric }: { title: string, icon: React.ReactN
 
               {isWeak && metric.tips.length > 0 && (
                 <div className="space-y-1.5">
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#C27D60]">Starter points</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#E07A5F]">Starter points</p>
                   {metric.tips.map((tip, i) => (
                     <div key={i} className="flex items-start gap-2">
-                      <Lightbulb className="h-3.5 w-3.5 text-[#C27D60] mt-0.5 flex-shrink-0" />
+                      <Lightbulb className="h-3.5 w-3.5 text-[#E07A5F] mt-0.5 flex-shrink-0" />
                       <p className="text-xs text-foreground/80">{tip}</p>
                     </div>
                   ))}

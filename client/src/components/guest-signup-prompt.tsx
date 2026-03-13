@@ -37,12 +37,12 @@ export function GuestSignupPrompt({ onDismiss }: { onDismiss: () => void }) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 10 }}
-        className="border-2 border-[#5B7B6A]/30 rounded-md bg-[#5B7B6A]/5 p-4 mt-6"
+        className="border-2 border-[#81B29A]/30 rounded-md bg-[#81B29A]/5 p-4 mt-6"
         data-testid="guest-signup-prompt"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            <UserPlus className="h-5 w-5 text-[#5B7B6A] mt-0.5 flex-shrink-0" />
+            <UserPlus className="h-5 w-5 text-[#81B29A] mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium">Sign up to save your results</p>
               <p className="text-xs text-muted-foreground mt-1">Track your thinking over time and review past exercises.</p>
@@ -55,7 +55,7 @@ export function GuestSignupPrompt({ onDismiss }: { onDismiss: () => void }) {
         <div className="flex gap-2 mt-3 ml-8">
           <Button
             size="sm"
-            className="rounded-md text-xs uppercase tracking-widest bg-[#5B7B6A] hover:bg-[#5B7B6A]/90"
+            className="rounded-md text-xs uppercase tracking-widest bg-[#81B29A] hover:bg-[#81B29A]/90"
             onClick={() => setMode("signup")}
             data-testid="button-show-signup"
           >
@@ -80,7 +80,7 @@ export function GuestSignupPrompt({ onDismiss }: { onDismiss: () => void }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
-      className="border-2 border-[#5B7B6A]/30 rounded-md bg-[#5B7B6A]/5 p-4 mt-6"
+      className="border-2 border-[#81B29A]/30 rounded-md bg-[#81B29A]/5 p-4 mt-6"
       data-testid="auth-form"
     >
       <div className="flex items-center justify-between mb-3">
@@ -112,7 +112,7 @@ export function GuestSignupPrompt({ onDismiss }: { onDismiss: () => void }) {
         <Button
           onClick={handleSubmit}
           disabled={loading || !email.trim() || !password.trim()}
-          className="w-full rounded-md uppercase tracking-widest text-xs bg-[#5B7B6A] hover:bg-[#5B7B6A]/90"
+          className="w-full rounded-md uppercase tracking-widest text-xs bg-[#81B29A] hover:bg-[#81B29A]/90"
           data-testid="button-auth-submit"
         >
           {loading ? "..." : mode === "signup" ? "Create Account" : "Log In"}

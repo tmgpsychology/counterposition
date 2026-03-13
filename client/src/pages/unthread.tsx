@@ -348,7 +348,7 @@ export default function Unthread() {
             className="space-y-6"
           >
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-[#C27D60] text-white flex items-center justify-center text-xl font-bold rounded-md">2</div>
+              <div className="w-12 h-12 bg-[#E07A5F] text-white flex items-center justify-center text-xl font-bold rounded-md">2</div>
               <div>
                 <h2 className="text-2xl font-bold uppercase tracking-tight">The Trade</h2>
                 <p className="text-sm text-muted-foreground">See the full picture of what you're trading.</p>
@@ -357,20 +357,20 @@ export default function Unthread() {
 
             <div className="border-2 border-muted rounded-md p-6 space-y-6">
               <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-center">
-                <div className="text-center p-4 border-2 border-[#C27D60] rounded-md bg-[#C27D60]/5">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#C27D60] mb-2">What I'm doing</p>
+                <div className="text-center p-4 border-2 border-[#E07A5F] rounded-md bg-[#E07A5F]/5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#E07A5F] mb-2">What I'm doing</p>
                   <p className="text-sm font-medium">{tradeCost}</p>
                 </div>
                 <ArrowDown className="h-6 w-6 text-muted-foreground rotate-[-90deg]" />
-                <div className="text-center p-4 border-2 border-[#5B7B6A] rounded-md bg-[#5B7B6A]/5">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#5B7B6A] mb-2">What I'm getting</p>
+                <div className="text-center p-4 border-2 border-[#81B29A] rounded-md bg-[#81B29A]/5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#81B29A] mb-2">What I'm getting</p>
                   <p className="text-sm font-medium">{tradeGain}</p>
                 </div>
               </div>
 
               <div className="border-t-2 border-muted pt-6 space-y-4">
                 <p className="text-lg font-medium text-center">
-                  Is <span className="text-[#5B7B6A] font-bold">{tradeGain || "this"}</span> worth <span className="text-[#C27D60] font-bold">{tradeCost || "that"}</span>?
+                  Is <span className="text-[#81B29A] font-bold">{tradeGain || "this"}</span> worth <span className="text-[#E07A5F] font-bold">{tradeCost || "that"}</span>?
                 </p>
 
                 <div className="flex justify-center gap-3">
@@ -380,8 +380,8 @@ export default function Unthread() {
                       onClick={() => setTradeVerdict(option)}
                       className={`px-6 py-3 border-2 rounded-md text-sm font-bold uppercase tracking-widest transition-all ${
                         tradeVerdict === option
-                          ? option === "yes" ? "border-[#5B7B6A] bg-[#5B7B6A] text-white"
-                            : option === "no" ? "border-[#C27D60] bg-[#C27D60] text-white"
+                          ? option === "yes" ? "border-[#81B29A] bg-[#81B29A] text-white"
+                            : option === "no" ? "border-[#E07A5F] bg-[#E07A5F] text-white"
                             : "border-foreground bg-foreground text-background"
                           : "border-muted hover:border-foreground"
                       }`}
@@ -438,7 +438,7 @@ export default function Unthread() {
             className="space-y-6"
           >
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-[#5B7B6A] text-white flex items-center justify-center text-xl font-bold rounded-md">3</div>
+              <div className="w-12 h-12 bg-[#81B29A] text-white flex items-center justify-center text-xl font-bold rounded-md">3</div>
               <div>
                 <h2 className="text-2xl font-bold uppercase tracking-tight">Decompose</h2>
                 <p className="text-sm text-muted-foreground">Find alternative paths to what you really need.</p>
@@ -478,7 +478,7 @@ export default function Unthread() {
                           className="overflow-hidden"
                         >
                           <div className="p-4 pt-0 border-t border-muted space-y-3">
-                            <p className="text-xs font-bold uppercase tracking-widest text-[#C27D60] pt-3">
+                            <p className="text-xs font-bold uppercase tracking-widest text-[#E07A5F] pt-3">
                               <Lightbulb className="h-3 w-3 inline mr-1" />
                               What else could achieve this?
                             </p>
@@ -536,9 +536,9 @@ export default function Unthread() {
                     {chain.filter(link => (linkAlternatives[link.id] || []).some(a => a.text.trim())).map(link => {
                       const reasonsText = link.reasons.filter(r => r.text.trim()).map(r => r.text).join(", ");
                       return (
-                        <div key={link.id} className="pl-4 border-l-4 border-[#C27D60]">
+                        <div key={link.id} className="pl-4 border-l-4 border-[#E07A5F]">
                           <p className="font-bold text-sm">
-                            Instead of: <span className="text-[#5B7B6A]">{reasonsText}</span>
+                            Instead of: <span className="text-[#81B29A]">{reasonsText}</span>
                           </p>
                           <p className="text-sm text-muted-foreground mt-1">
                             {(linkAlternatives[link.id] || []).filter(a => a.text.trim()).map(a => a.text).join(" · ")}
@@ -556,7 +556,7 @@ export default function Unthread() {
                       {user ? (
                         <Button
                           onClick={handleSaveExercise}
-                          className="rounded-md border-2 border-[#5B7B6A] bg-[#5B7B6A] text-white hover:bg-[#5B7B6A]/90 uppercase tracking-widest text-sm"
+                          className="rounded-md border-2 border-[#81B29A] bg-[#81B29A] text-white hover:bg-[#81B29A]/90 uppercase tracking-widest text-sm"
                           data-testid="button-save-exercise"
                         >
                           <Save className="h-4 w-4 mr-2" />
@@ -567,7 +567,7 @@ export default function Unthread() {
                   )}
                   {saved && (
                     <div className="flex justify-center pt-4">
-                      <span className="text-sm text-[#5B7B6A] font-medium flex items-center gap-2">
+                      <span className="text-sm text-[#81B29A] font-medium flex items-center gap-2">
                         <Check className="h-4 w-4" /> Saved to history
                       </span>
                     </div>

@@ -98,7 +98,7 @@ export default function AuthPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#5B7B6A]/30 focus:border-[#5B7B6A] transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#81B29A]/30 focus:border-[#81B29A] transition-all"
                   placeholder="you@example.com"
                   data-testid="input-email"
                   autoComplete="email"
@@ -116,7 +116,7 @@ export default function AuthPage() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#5B7B6A]/30 focus:border-[#5B7B6A] transition-all"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#81B29A]/30 focus:border-[#81B29A] transition-all"
                   placeholder="At least 6 characters"
                   data-testid="input-password"
                   autoComplete={isLogin ? "current-password" : "new-password"}
@@ -148,7 +148,7 @@ export default function AuthPage() {
                     type={showPassword ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#5B7B6A]/30 focus:border-[#5B7B6A] transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#81B29A]/30 focus:border-[#81B29A] transition-all"
                     placeholder="Confirm your password"
                     data-testid="input-confirm-password"
                     autoComplete="new-password"
@@ -161,7 +161,7 @@ export default function AuthPage() {
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-sm text-[#C27D60] bg-[#C27D60]/10 rounded-lg px-3 py-2"
+                className="text-sm text-[#E07A5F] bg-[#E07A5F]/10 rounded-lg px-3 py-2"
                 data-testid="text-error"
               >
                 {error}
@@ -173,7 +173,7 @@ export default function AuthPage() {
               disabled={loading}
               className="w-full py-2.5 rounded-lg text-sm font-medium uppercase tracking-widest transition-all disabled:opacity-50"
               style={{
-                backgroundColor: "#5B7B6A",
+                backgroundColor: "#81B29A",
                 color: "white",
               }}
               data-testid="button-submit"
@@ -195,14 +195,14 @@ export default function AuthPage() {
               {isLogin ? (
                 <>
                   Don't have an account?{" "}
-                  <span className="font-medium" style={{ color: "#5B7B6A" }}>
+                  <span className="font-medium" style={{ color: "#81B29A" }}>
                     Sign up
                   </span>
                 </>
               ) : (
                 <>
                   Already have an account?{" "}
-                  <span className="font-medium" style={{ color: "#5B7B6A" }}>
+                  <span className="font-medium" style={{ color: "#81B29A" }}>
                     Sign in
                   </span>
                 </>
