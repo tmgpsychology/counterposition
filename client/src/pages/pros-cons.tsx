@@ -857,7 +857,7 @@ function BarChart({
                       onSelect(item.id);
                       if (!isEditing) startEditing(item);
                     }}
-                    className={`w-full cursor-pointer border-2 rounded-md relative transition-all flex flex-col items-center justify-end p-1 overflow-hidden ${isSelected ? `ring-2 ${ringClass} ring-offset-2` : "opacity-70 hover:opacity-100"}`}
+                    className={`w-full cursor-pointer border-2 rounded-md relative transition-all flex flex-col items-center justify-end p-1 ${isSelected ? `ring-2 ${ringClass} ring-offset-2` : "opacity-70 hover:opacity-100"}`}
                     style={barStyle}
                     animate={{ height: barHeight }}
                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
@@ -873,7 +873,7 @@ function BarChart({
                         data-testid={`input-edit-bar-${item.id}`}
                       />
                     ) : (
-                      <p className="text-[8px] font-bold uppercase tracking-wider text-white text-center leading-tight break-words w-full">
+                      <p className="text-[8px] font-bold uppercase tracking-wider text-white text-center leading-tight w-full" style={{ overflowWrap: "break-word", wordBreak: "break-word", hyphens: "auto" }}>
                         {item.label}
                       </p>
                     )}
