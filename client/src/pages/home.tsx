@@ -44,9 +44,7 @@ export default function Home() {
         >
           <div className="text-center pt-16 sm:pt-24 pb-10">
             <h1 className="text-5xl sm:text-6xl font-bold tracking-tight leading-none">
-              <span className="text-[#81B29A]">Reckon</span>{" "}
-              <span className="text-[#F2CC8F]">&</span>{" "}
-              <span className="text-[#E07A5F]">Sift</span>
+              <span className="text-[#81B29A]">Reckon</span>
             </h1>
             <p className="text-base text-muted-foreground mt-4 max-w-md mx-auto leading-relaxed">
               Tools for challenging our thinking and decisions.
