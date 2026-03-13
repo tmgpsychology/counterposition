@@ -117,7 +117,7 @@ export default function Counterposition() {
   };
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-4 sm:p-6">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <Link href="/">
@@ -137,12 +137,12 @@ export default function Counterposition() {
           )}
         </div>
 
-        <div className="text-center mb-10">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Counterposition</p>
-          <h1 className="text-3xl sm:text-4xl font-bold uppercase tracking-tighter">
+        <div className="text-center mb-6 sm:mb-10">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 sm:mb-2">Counterposition</p>
+          <h1 className="text-2xl sm:text-4xl font-bold uppercase tracking-tighter">
             Test Your Conviction
           </h1>
-          <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2 max-w-md mx-auto">
             State your position, argue against it, and see how robust your thinking really is.
           </p>
         </div>
@@ -158,9 +158,9 @@ export default function Counterposition() {
             className="w-full max-w-2xl w-full"
           >
             <div className="space-y-6">
-              <div className="flex items-center space-x-4 mb-8">
-                <div className="w-12 h-12 bg-foreground text-background flex items-center justify-center text-xl font-bold">1</div>
-                <h2 className="text-3xl font-bold uppercase tracking-tight">The Thesis</h2>
+              <div className="flex items-center space-x-3 sm:space-x-4 mb-6 sm:mb-8">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-foreground text-background flex items-center justify-center text-lg sm:text-xl font-bold rounded-md">1</div>
+                <h2 className="text-2xl sm:text-3xl font-bold uppercase tracking-tight">The Thesis</h2>
               </div>
               
               <div className="space-y-4">
@@ -171,7 +171,7 @@ export default function Counterposition() {
                   value={belief}
                   onChange={(e) => setBelief(e.target.value)}
                   placeholder="e.g., Universal basic income is essential for the future of society..."
-                  className="min-h-[200px] text-lg p-6 rounded-none border-2 border-foreground focus-visible:ring-0 focus-visible:ring-offset-0 bg-card/50"
+                  className="min-h-[140px] sm:min-h-[200px] text-base sm:text-lg p-4 sm:p-6 rounded-none border-2 border-foreground focus-visible:ring-0 focus-visible:ring-offset-0 bg-card/50"
                   data-testid="input-belief"
                 />
               </div>
@@ -202,9 +202,9 @@ export default function Counterposition() {
             className="w-full max-w-3xl"
           >
             <div className="space-y-6">
-              <div className="flex items-center space-x-4 mb-8">
-                <div className="w-12 h-12 bg-destructive text-destructive-foreground flex items-center justify-center text-xl font-bold">2</div>
-                <h2 className="text-3xl font-bold uppercase tracking-tight">The Antithesis</h2>
+              <div className="flex items-center space-x-3 sm:space-x-4 mb-6 sm:mb-8">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-destructive text-destructive-foreground flex items-center justify-center text-lg sm:text-xl font-bold rounded-md">2</div>
+                <h2 className="text-2xl sm:text-3xl font-bold uppercase tracking-tight">The Antithesis</h2>
               </div>
               
               <Card className="rounded-none border-2 border-muted bg-muted/20">
@@ -310,19 +310,18 @@ export default function Counterposition() {
               </div>
             )}
 
-            <div className="grid md:grid-cols-[1fr_2fr] gap-8">
-              {/* Score Display */}
-              <div className="flex flex-col items-center justify-center p-8 border-4 border-foreground bg-card">
-                <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">Effort Grade</p>
+            <div className="grid md:grid-cols-[1fr_2fr] gap-6 sm:gap-8">
+              <div className="flex flex-col items-center justify-center p-5 sm:p-8 border-2 sm:border-4 border-foreground bg-card">
+                <p className="text-xs sm:text-sm font-bold uppercase tracking-widest text-muted-foreground mb-2 sm:mb-4">Effort Grade</p>
                 <div className="relative">
-                  <span className="text-9xl font-bold tracking-tighter leading-none block">
+                  <span className="text-6xl sm:text-9xl font-bold tracking-tighter leading-none block">
                     {score.grade}
                   </span>
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: "100%" }}
                     transition={{ delay: 0.5, duration: 1 }}
-                    className={`h-4 mt-4 ${
+                    className={`h-3 sm:h-4 mt-3 sm:mt-4 ${
                       score.grade.startsWith('A') ? 'bg-green-500' :
                       score.grade.startsWith('B') ? 'bg-blue-500' :
                       score.grade.startsWith('C') ? 'bg-yellow-500' :
@@ -332,11 +331,10 @@ export default function Counterposition() {
                 </div>
               </div>
 
-              {/* Breakdown */}
-              <div className="space-y-6">
-                <div className="border-b-2 border-foreground pb-4">
-                  <h2 className="text-4xl font-bold uppercase tracking-tight mb-2">Analysis Report</h2>
-                  <p className="text-xl italic">"{score.summary}"</p>
+              <div className="space-y-5 sm:space-y-6">
+                <div className="border-b-2 border-foreground pb-3 sm:pb-4">
+                  <h2 className="text-2xl sm:text-4xl font-bold uppercase tracking-tight mb-1.5 sm:mb-2">Analysis Report</h2>
+                  <p className="text-sm sm:text-xl italic">"{score.summary}"</p>
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -366,7 +364,7 @@ export default function Counterposition() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1.2, duration: 0.6 }}
-                  className="border-2 border-[#81B29A] rounded-md bg-[#81B29A]/5 p-6 space-y-3"
+                  className="border-2 border-[#81B29A] rounded-md bg-[#81B29A]/5 p-4 sm:p-6 space-y-2 sm:space-y-3"
                   data-testid="section-reflection"
                 >
                   <h3 className="text-sm font-bold uppercase tracking-widest text-[#81B29A]">The Point</h3>
@@ -378,20 +376,20 @@ export default function Counterposition() {
                   </p>
                 </motion.div>
 
-                <div className="pt-4 flex gap-3">
+                <div className="pt-3 sm:pt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
                   <Button 
                     onClick={handleShare}
-                    className="flex-1 rounded-none border-2 border-[#81B29A] h-16 text-lg uppercase tracking-widest bg-[#81B29A] text-white hover:bg-[#81B29A]/90 transition-all"
+                    className="flex-1 rounded-none border-2 border-[#81B29A] h-12 sm:h-16 text-sm sm:text-lg uppercase tracking-widest bg-[#81B29A] text-white hover:bg-[#81B29A]/90 transition-all"
                     data-testid="button-share"
                   >
-                    {copied ? <Check className="mr-3 h-5 w-5" /> : <Share2 className="mr-3 h-5 w-5" />}
+                    {copied ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
                     {copied ? "Link Copied" : "Share Result"}
                   </Button>
                   <Button 
                     onClick={handleReset}
-                    className="flex-1 rounded-none border-2 border-foreground h-16 text-lg uppercase tracking-widest bg-transparent text-foreground hover:bg-foreground hover:text-background transition-all"
+                    className="flex-1 rounded-none border-2 border-foreground h-12 sm:h-16 text-sm sm:text-lg uppercase tracking-widest bg-transparent text-foreground hover:bg-foreground hover:text-background transition-all"
                   >
-                    <RefreshCcw className="mr-3 h-5 w-5" />
+                    <RefreshCcw className="mr-2 h-4 w-4" />
                     {shared ? "Try It Yourself" : "New Hypothesis"}
                   </Button>
                 </div>
