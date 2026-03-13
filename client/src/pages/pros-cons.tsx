@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Minus, Trash2, ArrowLeft, Lightbulb, X, Save, Check, MessageCircle } from "lucide-react";
+import { Plus, Minus, Trash2, ArrowLeft, Lightbulb, X, Save, Check, MessageCircle, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
@@ -117,39 +117,37 @@ interface SpecificityNudge {
   side: "pro" | "con";
   message: string;
   suggestions: string[];
+  expanded: boolean;
 }
 
-function detectVagueness(label: string, topic: string, side: "pro" | "con"): SpecificityNudge | null {
+function generateNudge(label: string, topic: string, side: "pro" | "con"): { message: string; suggestions: string[] } {
   const l = label.toLowerCase().trim();
   const t = topic.toLowerCase();
-  const wordCount = l.split(/\s+/).length;
-
-  if (wordCount > 3) return null;
+  const cleanTopic = t.replace(/should i |going |to /gi, "").trim();
 
   const vagueTerms: Record<string, { message: string; suggestions: (topic: string, side: string) => string[] }> = {
     money: {
       message: "\"Money\" is broad — what specifically about money?",
-      suggestions: (t, s) => {
-        const base = [
-          `Saving money on ${t.replace(/should i |going |to /gi, "").trim()}`,
-          "Having more disposable income",
-          "Reducing financial stress",
-          "Being able to afford other priorities",
-          "Building long-term savings",
-        ];
+      suggestions: (_t, s) => {
         if (s === "con") return [
-          `The upfront cost of ${t.replace(/should i |going |to /gi, "").trim()}`,
+          `The upfront cost of ${cleanTopic}`,
           "Ongoing expenses it would create",
           "Money that could go elsewhere",
           "Risk of wasted spending",
           "Pressure on monthly budget",
         ];
-        return base;
+        return [
+          `Saving money on ${cleanTopic}`,
+          "Having more disposable income",
+          "Reducing financial stress",
+          "Being able to afford other priorities",
+          "Building long-term savings",
+        ];
       },
     },
     time: {
       message: "\"Time\" can mean a lot of things — what aspect?",
-      suggestions: (t, s) => {
+      suggestions: (_t, s) => {
         if (s === "con") return [
           "Time taken away from other priorities",
           "Learning curve / ramp-up time",
@@ -188,220 +186,122 @@ function detectVagueness(label: string, topic: string, side: "pro" | "con"): Spe
     health: {
       message: "Health in what way? Physical, mental, or something else?",
       suggestions: (_t, s) => {
-        if (s === "pro") return [
-          "Better physical fitness",
-          "Improved mental wellbeing",
-          "More energy day to day",
-          "Reduced risk of burnout",
-          "Healthier daily habits",
-        ];
-        return [
-          "Physical strain or exhaustion",
-          "Impact on mental health",
-          "Less time for exercise or self-care",
-          "Increased anxiety",
-          "Sleep disruption",
-        ];
+        if (s === "pro") return ["Better physical fitness", "Improved mental wellbeing", "More energy day to day", "Reduced risk of burnout", "Healthier daily habits"];
+        return ["Physical strain or exhaustion", "Impact on mental health", "Less time for exercise or self-care", "Increased anxiety", "Sleep disruption"];
       },
     },
     happiness: {
       message: "Can you pinpoint what would make you happier?",
       suggestions: (_t, s) => {
-        if (s === "pro") return [
-          "Doing something I genuinely enjoy",
-          "Feeling more fulfilled day to day",
-          "Spending time with people I love",
-          "Having something to look forward to",
-          "Sense of purpose and meaning",
-        ];
-        return [
-          "Short-term pleasure but long-term regret",
-          "Happiness that depends on external factors",
-          "Might not be as fulfilling as expected",
-        ];
+        if (s === "pro") return ["Doing something I genuinely enjoy", "Feeling more fulfilled day to day", "Spending time with people I love", "Having something to look forward to", "Sense of purpose and meaning"];
+        return ["Short-term pleasure but long-term regret", "Happiness that depends on external factors", "Might not be as fulfilling as expected"];
       },
     },
     freedom: {
       message: "Freedom from what, or freedom to do what?",
       suggestions: (_t, s) => {
-        if (s === "pro") return [
-          "Freedom to choose my own schedule",
-          "Independence from current constraints",
-          "More control over my daily life",
-          "Ability to explore new interests",
-          "Not being tied down",
-        ];
-        return [
-          "Too much freedom can feel aimless",
-          "Loss of structure and routine",
-          "Responsibility that comes with freedom",
-        ];
+        if (s === "pro") return ["Freedom to choose my own schedule", "Independence from current constraints", "More control over my daily life", "Ability to explore new interests", "Not being tied down"];
+        return ["Too much freedom can feel aimless", "Loss of structure and routine", "Responsibility that comes with freedom"];
       },
     },
     experience: {
       message: "What kind of experience — and why does it matter?",
       suggestions: (_t, s) => {
-        if (s === "pro") return [
-          "Gaining skills I can't get elsewhere",
-          "A once-in-a-lifetime opportunity",
-          "Stories and memories to carry forward",
-          "Broadening my perspective",
-          "Personal growth through challenge",
-        ];
-        return [
-          "The experience might not live up to expectations",
-          "Could gain similar experience another way",
-          "Discomfort during the adjustment period",
-        ];
+        if (s === "pro") return ["Gaining skills I can't get elsewhere", "A once-in-a-lifetime opportunity", "Stories and memories to carry forward", "Broadening my perspective", "Personal growth through challenge"];
+        return ["The experience might not live up to expectations", "Could gain similar experience another way", "Discomfort during the adjustment period"];
       },
     },
     people: {
       message: "What about people specifically?",
       suggestions: (_t, s) => {
-        if (s === "pro") return [
-          "Meeting people with different perspectives",
-          "Building meaningful new relationships",
-          "Being around people who inspire me",
-          "Expanding my professional network",
-        ];
-        return [
-          "Leaving behind people I care about",
-          "Difficulty building trust with new people",
-          "Feeling isolated or lonely",
-          "Dealing with difficult personalities",
-        ];
+        if (s === "pro") return ["Meeting people with different perspectives", "Building meaningful new relationships", "Being around people who inspire me", "Expanding my professional network"];
+        return ["Leaving behind people I care about", "Difficulty building trust with new people", "Feeling isolated or lonely", "Dealing with difficult personalities"];
       },
     },
     fun: {
       message: "What makes this fun — can you be more specific?",
       suggestions: (_t, s) => {
-        if (s === "pro") return [
-          "Doing activities I genuinely enjoy",
-          "A welcome break from routine",
-          "Excitement of trying something new",
-          "Shared joy with people I care about",
-        ];
-        return [
-          "Fun might wear off quickly",
-          "Could be fun at the expense of something important",
-        ];
+        if (s === "pro") return ["Doing activities I genuinely enjoy", "A welcome break from routine", "Excitement of trying something new", "Shared joy with people I care about"];
+        return ["Fun might wear off quickly", "Could be fun at the expense of something important"];
       },
     },
     security: {
       message: "Security in what sense?",
       suggestions: (_t, s) => {
-        if (s === "pro") return [
-          "Financial stability and safety net",
-          "Job security and predictable income",
-          "Emotional security in relationships",
-          "Feeling settled and grounded",
-        ];
-        return [
-          "Giving up current stability",
-          "Uncertainty about the future",
-          "Risk of losing what I have",
-          "No guaranteed safety net",
-        ];
+        if (s === "pro") return ["Financial stability and safety net", "Job security and predictable income", "Emotional security in relationships", "Feeling settled and grounded"];
+        return ["Giving up current stability", "Uncertainty about the future", "Risk of losing what I have", "No guaranteed safety net"];
       },
     },
     growth: {
       message: "Growth in what area?",
-      suggestions: (_t, _s) => [
-        "Professional skills and career advancement",
-        "Personal development and self-awareness",
-        "Emotional maturity and resilience",
-        "Learning new things I couldn't before",
-        "Stepping outside my comfort zone",
-      ],
+      suggestions: () => ["Professional skills and career advancement", "Personal development and self-awareness", "Emotional maturity and resilience", "Learning new things I couldn't before", "Stepping outside my comfort zone"],
     },
     risk: {
       message: "What's the actual risk you're worried about?",
-      suggestions: (_t, _s) => [
-        "Financial loss if it doesn't work out",
-        "Wasted time with nothing to show",
-        "Damage to relationships",
-        "Reputation or career setback",
-        "Emotional toll of failure",
-      ],
+      suggestions: () => ["Financial loss if it doesn't work out", "Wasted time with nothing to show", "Damage to relationships", "Reputation or career setback", "Emotional toll of failure"],
     },
     comfort: {
       message: "Comfort — in what way?",
       suggestions: (_t, s) => {
-        if (s === "pro") return [
-          "Physical comfort and ease",
-          "Emotional safety and familiarity",
-          "Predictable routine I enjoy",
-        ];
-        return [
-          "Staying comfortable means not growing",
-          "Comfort zone keeping me stuck",
-          "Trading long-term fulfilment for short-term ease",
-        ];
+        if (s === "pro") return ["Physical comfort and ease", "Emotional safety and familiarity", "Predictable routine I enjoy"];
+        return ["Staying comfortable means not growing", "Comfort zone keeping me stuck", "Trading long-term fulfilment for short-term ease"];
       },
     },
     family: {
       message: "What specifically about family?",
       suggestions: (_t, s) => {
-        if (s === "pro") return [
-          "More quality time with family",
-          "Being closer to family members",
-          "Better support system",
-          "Shared experiences with loved ones",
-        ];
-        return [
-          "Being further from family",
-          "Less time for family commitments",
-          "Family disagreement about the decision",
-          "Impact on family dynamics",
-        ];
+        if (s === "pro") return ["More quality time with family", "Being closer to family members", "Better support system", "Shared experiences with loved ones"];
+        return ["Being further from family", "Less time for family commitments", "Family disagreement about the decision", "Impact on family dynamics"];
       },
     },
     career: {
       message: "What about your career specifically?",
       suggestions: (_t, s) => {
-        if (s === "pro") return [
-          "Advancement opportunities",
-          "Better alignment with my goals",
-          "Higher earning potential",
-          "More meaningful work",
-        ];
-        return [
-          "Career disruption or gap",
-          "Starting over in a new field",
-          "Loss of seniority or progress",
-          "Uncertain career trajectory",
-        ];
+        if (s === "pro") return ["Advancement opportunities", "Better alignment with my goals", "Higher earning potential", "More meaningful work"];
+        return ["Career disruption or gap", "Starting over in a new field", "Loss of seniority or progress", "Uncertain career trajectory"];
       },
     },
   };
 
   for (const [term, config] of Object.entries(vagueTerms)) {
     if (l === term || l === term + "s") {
-      return {
-        itemId: "",
-        itemLabel: label,
-        side,
-        message: config.message,
-        suggestions: config.suggestions(t, side),
-      };
+      return { message: config.message, suggestions: config.suggestions(t, side) };
     }
   }
 
-  if (wordCount === 1 && l.length <= 12) {
+  const wordCount = l.split(/\s+/).length;
+
+  if (wordCount <= 2) {
     return {
-      itemId: "",
-      itemLabel: label,
-      side,
-      message: `Can you be more specific about "${label}"? What exactly do you mean?`,
-      suggestions: [
-        `${label} — in what way specifically?`,
-        `The impact of ${label.toLowerCase()} on my daily life`,
-        `How ${label.toLowerCase()} affects my long-term goals`,
-      ],
+      message: `Can you be more specific about "${label}"?`,
+      suggestions: side === "pro"
+        ? [
+          `${label} — what specifically makes this a positive?`,
+          `How does ${label.toLowerCase()} improve your situation?`,
+          `What would ${label.toLowerCase()} actually look like day to day?`,
+        ]
+        : [
+          `${label} — what exactly is the downside?`,
+          `How does ${label.toLowerCase()} make things worse?`,
+          `What would ${label.toLowerCase()} actually cost you?`,
+        ],
     };
   }
 
-  return null;
+  return {
+    message: `Good — could you sharpen "${label}" even further?`,
+    suggestions: side === "pro"
+      ? [
+        `Why does this matter to you personally?`,
+        `What would this look like in practice?`,
+        `How significant is this compared to other factors?`,
+      ]
+      : [
+        `How likely is this to actually happen?`,
+        `What would make this worse or better?`,
+        `Could you live with this downside?`,
+      ],
+  };
 }
 
 const MAX_BAR_HEIGHT = 200;
@@ -421,7 +321,7 @@ export default function ProsCons() {
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [dismissedPrompt, setDismissedPrompt] = useState(false);
-  const [specificityNudge, setSpecificityNudge] = useState<SpecificityNudge | null>(null);
+  const [nudges, setNudges] = useState<Map<string, SpecificityNudge>>(new Map());
 
   const addPro = () => {
     if (!newPro.trim()) return;
@@ -429,12 +329,8 @@ export default function ProsCons() {
     const label = newPro.trim();
     setPros(prev => [...prev, { id, label, weight: 5 }]);
     setNewPro("");
-    const nudge = detectVagueness(label, topic, "pro");
-    if (nudge) {
-      setSpecificityNudge({ ...nudge, itemId: id });
-    } else {
-      setSpecificityNudge(null);
-    }
+    const { message, suggestions } = generateNudge(label, topic, "pro");
+    setNudges(prev => new Map(prev).set(id, { itemId: id, itemLabel: label, side: "pro", message, suggestions, expanded: true }));
   };
 
   const addCon = () => {
@@ -443,32 +339,42 @@ export default function ProsCons() {
     const label = newCon.trim();
     setCons(prev => [...prev, { id, label, weight: 5 }]);
     setNewCon("");
-    const nudge = detectVagueness(label, topic, "con");
-    if (nudge) {
-      setSpecificityNudge({ ...nudge, itemId: id });
-    } else {
-      setSpecificityNudge(null);
-    }
+    const { message, suggestions } = generateNudge(label, topic, "con");
+    setNudges(prev => new Map(prev).set(id, { itemId: id, itemLabel: label, side: "con", message, suggestions, expanded: true }));
   };
 
-  const replaceWithSpecific = (newLabel: string) => {
-    if (!specificityNudge) return;
-    const { itemId, side } = specificityNudge;
+  const toggleNudge = (itemId: string) => {
+    setNudges(prev => {
+      const next = new Map(prev);
+      const nudge = next.get(itemId);
+      if (nudge) next.set(itemId, { ...nudge, expanded: !nudge.expanded });
+      return next;
+    });
+  };
+
+  const replaceWithSpecific = (itemId: string, newLabel: string, side: "pro" | "con") => {
     if (side === "pro") {
       setPros(prev => prev.map(p => p.id === itemId ? { ...p, label: newLabel } : p));
     } else {
       setCons(prev => prev.map(c => c.id === itemId ? { ...c, label: newLabel } : c));
     }
-    setSpecificityNudge(null);
+    const { message, suggestions } = generateNudge(newLabel, topic, side);
+    setNudges(prev => {
+      const next = new Map(prev);
+      next.set(itemId, { itemId, itemLabel: newLabel, side, message, suggestions, expanded: true });
+      return next;
+    });
   };
 
   const removePro = (id: string) => {
     setPros(prev => prev.filter(p => p.id !== id));
     if (selectedBarId === id) { setSelectedBarId(null); setSelectedBarSide(null); }
+    setNudges(prev => { const next = new Map(prev); next.delete(id); return next; });
   };
   const removeCon = (id: string) => {
     setCons(prev => prev.filter(c => c.id !== id));
     if (selectedBarId === id) { setSelectedBarId(null); setSelectedBarSide(null); }
+    setNudges(prev => { const next = new Map(prev); next.delete(id); return next; });
   };
 
   const selectBar = (id: string, side: "pro" | "con") => {
@@ -586,7 +492,7 @@ export default function ProsCons() {
           </Link>
           <div className="flex gap-3">
             <Button
-              onClick={() => { setTopicSet(false); setTopic(""); setPros([]); setCons([]); setDismissedSuggestions(new Set()); setShowSuggestions(false); setSaved(false); setSaveError(""); setDismissedPrompt(false); }}
+              onClick={() => { setTopicSet(false); setTopic(""); setPros([]); setCons([]); setDismissedSuggestions(new Set()); setShowSuggestions(false); setSaved(false); setSaveError(""); setDismissedPrompt(false); setNudges(new Map()); }}
               variant="outline"
               className="rounded-none border-2 border-foreground uppercase tracking-wider text-sm"
               data-testid="button-reset"
@@ -691,61 +597,65 @@ export default function ProsCons() {
           )}
         </div>
 
-        <AnimatePresence>
-          {specificityNudge && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25 }}
-              className={`border-2 rounded-lg p-4 sm:p-5 space-y-3 ${
-                specificityNudge.side === "pro"
-                  ? "border-[#81B29A]/40 bg-[#81B29A]/5"
-                  : "border-[#E07A5F]/40 bg-[#E07A5F]/5"
-              }`}
-              data-testid="specificity-nudge"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-2.5">
-                  <MessageCircle className={`h-4 w-4 mt-0.5 flex-shrink-0 ${
-                    specificityNudge.side === "pro" ? "text-[#81B29A]" : "text-[#E07A5F]"
-                  }`} />
-                  <p className="text-sm font-medium">{specificityNudge.message}</p>
-                </div>
-                <button
-                  onClick={() => setSpecificityNudge(null)}
-                  className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-                  data-testid="button-dismiss-nudge"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {specificityNudge.suggestions.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => replaceWithSpecific(s)}
-                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all hover:scale-[1.02] ${
-                      specificityNudge.side === "pro"
-                        ? "bg-[#81B29A]/15 text-[#81B29A] hover:bg-[#81B29A]/25"
-                        : "bg-[#E07A5F]/15 text-[#E07A5F] hover:bg-[#E07A5F]/25"
-                    }`}
-                    data-testid={`button-specific-${s.slice(0, 20)}`}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => setSpecificityNudge(null)}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider"
-                data-testid="button-keep-vague"
+        {nudges.size > 0 && (
+          <div className="space-y-2">
+            {[...nudges.values()].map((nudge) => (
+              <div
+                key={nudge.itemId}
+                className={`border rounded-lg overflow-hidden transition-all ${
+                  nudge.side === "pro"
+                    ? "border-[#81B29A]/30 bg-[#81B29A]/5"
+                    : "border-[#E07A5F]/30 bg-[#E07A5F]/5"
+                }`}
+                data-testid={`specificity-nudge-${nudge.itemId}`}
               >
-                Keep as "{specificityNudge.itemLabel}"
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                <button
+                  onClick={() => toggleNudge(nudge.itemId)}
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left"
+                  data-testid={`button-toggle-nudge-${nudge.itemId}`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <MessageCircle className={`h-3.5 w-3.5 flex-shrink-0 ${
+                      nudge.side === "pro" ? "text-[#81B29A]" : "text-[#E07A5F]"
+                    }`} />
+                    <span className="text-xs font-medium truncate">
+                      {nudge.expanded ? nudge.message : `"${nudge.itemLabel}" — tap to refine`}
+                    </span>
+                  </div>
+                  <ChevronDown className={`h-3.5 w-3.5 flex-shrink-0 text-muted-foreground transition-transform ${nudge.expanded ? "rotate-180" : ""}`} />
+                </button>
+                <AnimatePresence>
+                  {nudge.expanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-3 pb-3 flex flex-wrap gap-1.5">
+                        {nudge.suggestions.map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => replaceWithSpecific(nudge.itemId, s, nudge.side)}
+                            className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-all hover:scale-[1.02] ${
+                              nudge.side === "pro"
+                                ? "bg-[#81B29A]/15 text-[#81B29A] hover:bg-[#81B29A]/25"
+                                : "bg-[#E07A5F]/15 text-[#E07A5F] hover:bg-[#E07A5F]/25"
+                            }`}
+                            data-testid={`button-specific-${s.slice(0, 20)}`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))}
+          </div>
+        )}
 
         {suggestions.length > 0 && (
           <div className="space-y-4">
