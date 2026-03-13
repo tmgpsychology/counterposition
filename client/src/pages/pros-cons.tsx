@@ -352,7 +352,7 @@ export default function ProsCons() {
     });
   };
 
-  const replaceWithSpecific = (itemId: string, newLabel: string, side: "pro" | "con") => {
+  const updateItemLabel = (itemId: string, newLabel: string, side: "pro" | "con") => {
     if (side === "pro") {
       setPros(prev => prev.map(p => p.id === itemId ? { ...p, label: newLabel } : p));
     } else {
@@ -361,7 +361,8 @@ export default function ProsCons() {
     const { message, suggestions } = generateNudge(newLabel, topic, side);
     setNudges(prev => {
       const next = new Map(prev);
-      next.set(itemId, { itemId, itemLabel: newLabel, side, message, suggestions, expanded: true });
+      const existing = next.get(itemId);
+      next.set(itemId, { itemId, itemLabel: newLabel, side, message, suggestions, expanded: existing?.expanded ?? true });
       return next;
     });
   };
@@ -531,8 +532,10 @@ export default function ProsCons() {
                   selectedId={selectedBarId}
                   onSelect={(id) => selectBar(id, "pro")}
                   onRemove={removePro}
+                  onRename={(id, label) => updateItemLabel(id, label, "pro")}
                   emptyText="No pros yet"
                 />
+                <NudgeList nudges={nudges} side="pro" onToggle={toggleNudge} />
               </div>
 
               <div className="space-y-6">
@@ -557,8 +560,10 @@ export default function ProsCons() {
                   selectedId={selectedBarId}
                   onSelect={(id) => selectBar(id, "con")}
                   onRemove={removeCon}
+                  onRename={(id, label) => updateItemLabel(id, label, "con")}
                   emptyText="No cons yet"
                 />
+                <NudgeList nudges={nudges} side="con" onToggle={toggleNudge} />
               </div>
             </div>
           </div>
@@ -596,66 +601,6 @@ export default function ProsCons() {
             </div>
           )}
         </div>
-
-        {nudges.size > 0 && (
-          <div className="space-y-2">
-            {[...nudges.values()].map((nudge) => (
-              <div
-                key={nudge.itemId}
-                className={`border rounded-lg overflow-hidden transition-all ${
-                  nudge.side === "pro"
-                    ? "border-[#81B29A]/30 bg-[#81B29A]/5"
-                    : "border-[#E07A5F]/30 bg-[#E07A5F]/5"
-                }`}
-                data-testid={`specificity-nudge-${nudge.itemId}`}
-              >
-                <button
-                  onClick={() => toggleNudge(nudge.itemId)}
-                  className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left"
-                  data-testid={`button-toggle-nudge-${nudge.itemId}`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <MessageCircle className={`h-3.5 w-3.5 flex-shrink-0 ${
-                      nudge.side === "pro" ? "text-[#81B29A]" : "text-[#E07A5F]"
-                    }`} />
-                    <span className="text-xs font-medium truncate">
-                      {nudge.expanded ? nudge.message : `"${nudge.itemLabel}" — tap to refine`}
-                    </span>
-                  </div>
-                  <ChevronDown className={`h-3.5 w-3.5 flex-shrink-0 text-muted-foreground transition-transform ${nudge.expanded ? "rotate-180" : ""}`} />
-                </button>
-                <AnimatePresence>
-                  {nudge.expanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="px-3 pb-3 flex flex-wrap gap-1.5">
-                        {nudge.suggestions.map((s) => (
-                          <button
-                            key={s}
-                            onClick={() => replaceWithSpecific(nudge.itemId, s, nudge.side)}
-                            className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-all hover:scale-[1.02] ${
-                              nudge.side === "pro"
-                                ? "bg-[#81B29A]/15 text-[#81B29A] hover:bg-[#81B29A]/25"
-                                : "bg-[#E07A5F]/15 text-[#E07A5F] hover:bg-[#E07A5F]/25"
-                            }`}
-                            data-testid={`button-specific-${s.slice(0, 20)}`}
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
-          </div>
-        )}
 
         {suggestions.length > 0 && (
           <div className="space-y-4">
@@ -788,6 +733,55 @@ export default function ProsCons() {
   );
 }
 
+function NudgeList({ nudges, side, onToggle }: { nudges: Map<string, SpecificityNudge>; side: "pro" | "con"; onToggle: (id: string) => void }) {
+  const sideNudges = [...nudges.values()].filter(n => n.side === side);
+  if (sideNudges.length === 0) return null;
+  const color = side === "pro" ? "#81B29A" : "#E07A5F";
+  const borderColor = side === "pro" ? "border-[#81B29A]/30" : "border-[#E07A5F]/30";
+  const bgColor = side === "pro" ? "bg-[#81B29A]/5" : "bg-[#E07A5F]/5";
+
+  return (
+    <div className="space-y-1.5">
+      {sideNudges.map((nudge) => (
+        <div
+          key={nudge.itemId}
+          className={`border rounded-lg overflow-hidden ${borderColor} ${bgColor}`}
+          data-testid={`specificity-nudge-${nudge.itemId}`}
+        >
+          <button
+            onClick={() => onToggle(nudge.itemId)}
+            className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left"
+            data-testid={`button-toggle-nudge-${nudge.itemId}`}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <MessageCircle className="h-3.5 w-3.5 flex-shrink-0" style={{ color }} />
+              <span className="text-[11px] font-medium truncate" style={{ color }}>
+                "{nudge.itemLabel}"
+              </span>
+            </div>
+            <ChevronDown className={`h-3.5 w-3.5 flex-shrink-0 text-muted-foreground transition-transform ${nudge.expanded ? "rotate-180" : ""}`} />
+          </button>
+          <AnimatePresence>
+            {nudge.expanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <p className="px-3 pb-2.5 text-xs text-muted-foreground leading-relaxed">
+                  {nudge.message} Tap the bar to edit it.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function BarChart({
   items,
   color,
@@ -795,6 +789,7 @@ function BarChart({
   selectedId,
   onSelect,
   onRemove,
+  onRename,
   emptyText,
 }: {
   items: BarItem[];
@@ -803,8 +798,13 @@ function BarChart({
   selectedId: string | null;
   onSelect: (id: string) => void;
   onRemove: (id: string) => void;
+  onRename: (id: string, label: string) => void;
   emptyText: string;
 }) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const editRef = useRef<HTMLInputElement>(null);
+
   if (items.length === 0) {
     return (
       <div className="flex items-end justify-center h-[260px] border-2 border-dashed border-muted rounded-lg p-4">
@@ -818,7 +818,20 @@ function BarChart({
     ? { backgroundColor: "#81B29A", borderColor: "#81B29A" }
     : { backgroundColor: "#E07A5F", borderColor: "#E07A5F" };
   const ringClass = isPro ? "ring-[#81B29A]" : "ring-[#E07A5F]";
-  const barTextClass = isPro ? "text-white" : "text-white";
+
+  const startEditing = (item: BarItem) => {
+    setEditingId(item.id);
+    setEditValue(item.label);
+    setTimeout(() => editRef.current?.focus(), 50);
+  };
+
+  const commitEdit = (id: string) => {
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== items.find(i => i.id === id)?.label) {
+      onRename(id, trimmed);
+    }
+    setEditingId(null);
+  };
 
   return (
     <div className="border-2 border-muted rounded-lg p-4">
@@ -828,6 +841,7 @@ function BarChart({
             const heightPercent = item.weight / globalMax;
             const barHeight = Math.max(40, heightPercent * MAX_BAR_HEIGHT);
             const isSelected = selectedId === item.id;
+            const isEditing = editingId === item.id;
             return (
               <motion.div
                 key={item.id}
@@ -839,16 +853,31 @@ function BarChart({
               >
                 <div className="flex flex-col justify-end w-full" style={{ height: MAX_BAR_HEIGHT }}>
                   <motion.div
-                    onClick={() => onSelect(item.id)}
+                    onClick={() => {
+                      onSelect(item.id);
+                      if (!isEditing) startEditing(item);
+                    }}
                     className={`w-full cursor-pointer border-2 rounded-md relative transition-all flex flex-col items-center justify-end p-1 overflow-hidden ${isSelected ? `ring-2 ${ringClass} ring-offset-2` : "opacity-70 hover:opacity-100"}`}
                     style={barStyle}
                     animate={{ height: barHeight }}
                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
                   >
-                    <p className={`text-[8px] font-bold uppercase tracking-wider ${barTextClass} text-center leading-tight break-words w-full`}>
-                      {item.label}
-                    </p>
-                    <span className={`text-xs font-bold ${barTextClass} opacity-90 mt-0.5`}>{item.weight}</span>
+                    {isEditing ? (
+                      <input
+                        ref={editRef}
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={() => commitEdit(item.id)}
+                        onKeyDown={(e) => { if (e.key === "Enter") commitEdit(item.id); if (e.key === "Escape") setEditingId(null); }}
+                        className="w-full bg-white/20 text-white text-[9px] font-bold uppercase tracking-wider text-center rounded px-0.5 py-0.5 outline-none placeholder:text-white/50"
+                        data-testid={`input-edit-bar-${item.id}`}
+                      />
+                    ) : (
+                      <p className="text-[8px] font-bold uppercase tracking-wider text-white text-center leading-tight break-words w-full">
+                        {item.label}
+                      </p>
+                    )}
+                    <span className="text-xs font-bold text-white opacity-90 mt-0.5">{item.weight}</span>
                   </motion.div>
                 </div>
                 <button
